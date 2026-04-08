@@ -4,19 +4,17 @@
 class axi_master_single_sequence extends axi_base_sequence;
     `uvm_object_utils(axi_master_single_sequence)
 
-    rand bit [15:0] addr;
+    rand bit [31:0] addr;
     rand bit [31:0] data;
     rand trans_type_enum trans_type;
     rand burst_len_enum burst_len;
     rand burst_type_enum burst_type;
     rand burst_size_enum burst_size = BURST_SIZE_4BYTES;
 
-    bit [31:0] every_beat_data[];   //store every beat's data
-    bit [3:0] every_beat_wstrb[];
+    bit [31:0] every_beat_data[];
+    bit [3:0]  every_beat_wstrb[];
 
-    //control sequence whether blocking wait for driver's response
-    //default-mode:  1(blocking)
-    //pipeline-mode: 0(non-blocking)
+    // 1: blocking, 0: non-blocking
     bit wait_for_response = 1;
 
     constraint single_trans_type_cstr {
@@ -26,14 +24,15 @@ class axi_master_single_sequence extends axi_base_sequence;
     function new(string name = "axi_master_single_sequence");
         super.new(name);
     endfunction
-    
+
     virtual task body();
         `uvm_info(get_type_name(), "started sequence", UVM_LOW)
-        //under pipeline-mode
-        if(!wait_for_response) begin
+
+        if (!wait_for_response) begin
             set_response_queue_error_report_disabled(1);
         end
-        if(trans_type == WRITE) begin
+
+        if (trans_type == WRITE) begin
             do_write();
         end else begin
             do_read();
@@ -43,20 +42,20 @@ class axi_master_single_sequence extends axi_base_sequence;
     virtual task do_write();
         int actual_beats = burst_len + 1;
 
-        if(every_beat_data.size() != actual_beats) begin
+        if (every_beat_data.size() != actual_beats) begin
             every_beat_data = new[actual_beats];
             every_beat_data[0] = data;
-            for(int i = 1; i < actual_beats; i ++) begin
-                every_beat_data[i] = 0;
+            for (int i = 1; i < actual_beats; i++) begin
+                every_beat_data[i] = 32'h0;
             end
         end
 
         req = axi_transaction::type_id::create("req");
         start_item(req);
 
-        if(!req.randomize() with {
+        if (!req.randomize() with {
             trans_type      == WRITE;
-            awid            == 0;                  //smoke test only
+            awid            == 0;
             awaddr          == local::addr;
             awlen           == local::burst_len;
             awsize          == local::burst_size;
@@ -64,35 +63,33 @@ class axi_master_single_sequence extends axi_base_sequence;
             awlock          == NORMAL;
             awcache         == NONBUFFER;
             awprot          == NPRI_SEC_DATA;
+            awqos           == 4'd0;
+            awuser          == 32'd0;
             wdata.size()    == local::actual_beats;
-            wstrb.size()    == local::actual_beats;            
+            wstrb.size()    == local::actual_beats;
+            wuser.size()    == local::actual_beats;
         }) begin
-            `uvm_fatal(get_type_name(), "randomize failed in vip-write-transaction")
+            `uvm_fatal(get_type_name(), "randomize failed in write transaction")
         end
 
-        foreach(every_beat_data[i]) begin
+        foreach (every_beat_data[i]) begin
             req.wdata[i] = every_beat_data[i];
-            //use custom value if have defined, otherwise use 4'hF
             req.wstrb[i] = (every_beat_wstrb.size() > i) ? every_beat_wstrb[i] : 4'hF;
+            req.wuser[i] = 32'd0;
         end
-        
+
         req.response_requested = wait_for_response;
         finish_item(req);
 
-        //blocking
-        if(wait_for_response) begin
+        if (wait_for_response) begin
             get_response(rsp);
 
-            //id set 0 in smoke test, so no need to check id temporarily
-            //check response
-            if(rsp.bresp == OKAY) begin
+            if (rsp.bresp == OKAY) begin
                 `uvm_info(get_type_name(), $sformatf("write complete: ADDR=%0h DATA=%0h", addr, data), UVM_MEDIUM)
             end else begin
-                `uvm_error(get_type_name(), $sformatf("write error: ADDR=%0h DATA=%0h", addr, data))
+                `uvm_error(get_type_name(), $sformatf("write error: ADDR=%0h DATA=%0h BRESP=%0h", addr, data, rsp.bresp))
             end
         end
-        //non-blocking, finish_item return and immediately finish
-        //sequence dont wait B channel finish, and send next transaction immediately
     endtask
 
     virtual task do_read();
@@ -101,7 +98,7 @@ class axi_master_single_sequence extends axi_base_sequence;
         req = axi_transaction::type_id::create("req");
         start_item(req);
 
-        if(!req.randomize() with {
+        if (!req.randomize() with {
             trans_type  == READ;
             arid        == 0;
             araddr      == local::addr;
@@ -111,34 +108,32 @@ class axi_master_single_sequence extends axi_base_sequence;
             arlock      == NORMAL;
             arcache     == NONBUFFER;
             arprot      == NPRI_SEC_DATA;
+            arqos       == 4'd0;
+            aruser      == 32'd0;
         }) begin
-            `uvm_fatal(get_type_name(), "randomize failed in vip-write-transaction")
+            `uvm_fatal(get_type_name(), "randomize failed in read transaction")
         end
-        
+
         req.response_requested = wait_for_response;
         finish_item(req);
 
-        //blocking
-        if(wait_for_response) begin
+        if (wait_for_response) begin
             get_response(rsp);
 
             every_beat_data = new[actual_beats];
-            foreach(every_beat_data[i]) begin
+            foreach (every_beat_data[i]) begin
                 every_beat_data[i] = rsp.rdata[i];
             end
-
             data = every_beat_data[0];
 
-            //id set 0 in smoke test, so no need to check id temporarily
-            //check response
-            if(rsp.rresp[0] == OKAY) begin
-                data =rsp.rdata[0];
+            if (rsp.rresp[0] == OKAY) begin
                 `uvm_info(get_type_name(), $sformatf("read complete: ADDR=%0h DATA=%0h", addr, data), UVM_MEDIUM)
             end else begin
-                `uvm_error(get_type_name(), $sformatf("read error: ADDR=%0h DATA=%0h", addr, data))
+                `uvm_error(get_type_name(), $sformatf("read error: ADDR=%0h RRESP=%0h", addr, rsp.rresp[0]))
             end
         end
     endtask
+
 endclass
 
-`endif 
+`endif

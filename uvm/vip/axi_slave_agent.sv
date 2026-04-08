@@ -1,19 +1,18 @@
-`ifndef AXI_MASTER_AGENT_SV
-`define AXI_MASTER_AGENT_SV
+`ifndef AXI_SLAVE_AGENT_SV
+`define AXI_SLAVE_AGENT_SV
 
-class axi_master_agent extends uvm_agent;
-    `uvm_component_utils(axi_master_agent)
+class axi_slave_agent extends uvm_agent;
+    `uvm_component_utils(axi_slave_agent)
 
     axi_configuration cfg;
-    axi_master_sequencer sequencer;
-    axi_master_driver driver;
+    axi_slave_driver  driver;
     axi_master_monitor monitor;
 
     uvm_analysis_port #(axi_transaction) item_collected_port;
 
     virtual axi_if vif;
 
-    function new(string name = "axi_master_agent", uvm_component parent = null);
+    function new(string name = "axi_slave_agent", uvm_component parent = null);
         super.new(name, parent);
         item_collected_port = new("item_collected_port", this);
     endfunction
@@ -33,24 +32,19 @@ class axi_master_agent extends uvm_agent;
             end
         end
 
-        sequencer = axi_master_sequencer::type_id::create("sequencer", this);
-        driver    = axi_master_driver::type_id::create("driver", this);
-        monitor   = axi_master_monitor::type_id::create("monitor", this);
+        driver  = axi_slave_driver::type_id::create("driver", this);
+        monitor = axi_master_monitor::type_id::create("monitor", this);
     endfunction
 
     function void connect_phase(uvm_phase phase);
         super.connect_phase(phase);
 
-        monitor.vif = vif;
-        monitor.cfg = cfg;
-
         driver.vif = vif;
         driver.cfg = cfg;
 
-        sequencer.vif = vif;
-        sequencer.cfg = cfg;
+        monitor.vif = vif;
+        monitor.cfg = cfg;
 
-        driver.seq_item_port.connect(sequencer.seq_item_export);
         monitor.item_observed_port.connect(item_collected_port);
     endfunction
 

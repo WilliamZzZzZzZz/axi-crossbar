@@ -4,7 +4,7 @@
 class axiram_virtual_sequencer extends uvm_sequencer;
     `uvm_component_utils(axiram_virtual_sequencer)
 
-    axi_master_sequencer axi_mst_sqr;
+    axi_master_sequencer axi_mst_sqr[2];
 
     function new(string name = "axiram_virtual_sequencer", uvm_component parent = null);
         super.new(name, parent);
@@ -12,4 +12,4 @@ class axiram_virtual_sequencer extends uvm_sequencer;
 
 endclass
 
-`endif 
+`endif

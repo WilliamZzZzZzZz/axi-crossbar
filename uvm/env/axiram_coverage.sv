@@ -8,7 +8,7 @@ class axiram_coverage extends uvm_subscriber #(axi_transaction);
     burst_len_enum  burst_len;
     burst_size_enum burst_size;
     burst_type_enum burst_type;
-    bit [15:0]      addr;
+    bit [31:0]      addr;
     bit [3:0]       wstrb;
 
     function new(string name  = "axiram_coverage", uvm_component parent = null);
