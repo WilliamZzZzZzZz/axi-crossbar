@@ -5,6 +5,10 @@ class axi_configuration extends uvm_object;
 
     `uvm_object_utils(axi_configuration)
 
+    int data_width = 32;
+    int strb_width = 4;
+    int addr_width = 32;
+
     function new(string name = "axi_configuration");
         super.new(name);
     endfunction
