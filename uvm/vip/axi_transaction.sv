@@ -33,7 +33,7 @@ class axi_transaction extends uvm_sequence_item;
     //W
     rand bit [31:0]             wdata[];   // write data
     rand bit [15:0]             wstrb[];   // write strobes(1 bit wstrb control 8bits wdata) 1-allow write in, 0-masked
-    
+
     //B
     bit [7:0]                   bid;       // response id(which data)
     bit [1:0]                   bresp;     // write response from slave(00-OKAY, 01-EXOKAY, 10-SLVERR, 11-DECERR)

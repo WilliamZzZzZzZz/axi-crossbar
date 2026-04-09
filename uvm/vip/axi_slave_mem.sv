@@ -2,15 +2,15 @@
 `define AXI_SLAVE_MEM_SV
 
 class axi_slave_mem #(
-    parameter int ADDR_WIDTH = 32;
-    parameter int DATA_WIDTH = 32;
+    parameter int ADDR_WIDTH = 32,
+    parameter int DATA_WIDTH = 32,
     parameter int STRB_WIDTH = (DATA_WIDTH/8)
 ) extends uvm_object;
 
     `uvm_object_utils(axi_slave_mem#(ADDR_WIDTH, DATA_WIDTH, STRB_WIDTH))
 
     axi_configuration cfg;
-    bit [DATA_WIDTH - 1:0] default_word_value;
+    bit [DATA_WIDTH - 1:0] default_word_value = '0;
     bit [DATA_WIDTH - 1:0] data [bit [ADDR_WIDTH - 1:0]];
 
     function new(string name = "axi_slave_mem");
@@ -21,6 +21,7 @@ class axi_slave_mem #(
         return data.exists(word_addr) ? data[word_addr] : default_word_value;
     endfunction
 
+    //store data with strb into mem word-by-word
     function void write_word_with_strb(
         bit [ADDR_WIDTH - 1:0] word_addr;
         bit [DATA_WIDTH - 1:0] new_data;
@@ -40,6 +41,7 @@ class axi_slave_mem #(
         data[word_addr] = updated_word;
     endfunction
 
+    //calculate every beat's actual addr
     static function bit [ADDR_WIDTH - 1:0] calc_beat_addr(
         bit [ADDR_WIDTH - 1:0] base_addr,
         bit [1:0]              burst_type,
@@ -67,6 +69,7 @@ class axi_slave_mem #(
             end
             //TODO:WRAP
             default: begin
+                addr = base_addr;
                 `uvm_error(get_type_name(), "the burst_type is illegal")
             end
         endcase

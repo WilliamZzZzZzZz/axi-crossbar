@@ -75,7 +75,7 @@ class axi_write_driver extends uvm_object;
         int i;
         forever begin
             aw2w_mbx.get(tr);
-            beat_num = tr.awlen + 1;
+            beat_num = int'(tr.awlen) + 1;
             i = 0;
 
             @(vif.master_cb);
