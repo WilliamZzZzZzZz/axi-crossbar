@@ -96,7 +96,7 @@ class axiram_scoreboard extends uvm_subscriber #(axi_transaction);
         bit [15:0]      beat_addr;
 
         stride        = 1 << int'(burst_size);      //byte number of every beat 
-        aligned_start = (base_addr >> int'(burst_size)) << int'(burst_size);    //dynamically calculate first beat's aligned addr according to burst_szie
+        aligned_start = (base_addr / stride) * stride;    //dynamically calculate first beat's aligned addr according to burst_szie
 
         if(burst_type == FIXED)  begin
             beat_addr = base_addr;

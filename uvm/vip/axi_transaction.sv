@@ -1,8 +1,7 @@
 `ifndef AXI_TRANSACTION_SV
 `define AXI_TRANSACTION_SV
 
-class axi_transaction extends uvm_sequence_item;
-    
+class axi_transaction extends uvm_sequence_item;    
 
     //--------------------------------------------------------------------------
     // transaction type: WRITE or READ
@@ -14,7 +13,7 @@ class axi_transaction extends uvm_sequence_item;
     int wbeat_finish;
     int b_finish;
     int rbeat_finish;
-
+    
     //pipeline-mode, driver checks this flag before sending response back
     bit response_requested = 1;
     

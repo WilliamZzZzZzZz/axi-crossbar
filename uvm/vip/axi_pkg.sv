@@ -8,6 +8,7 @@ package axi_pkg;
     `include "axi_configuration.sv"
     `include "axi_transaction.sv"
     `include "axi_sequence_lib.svh"
+    `include "axi_slave_mem.sv"
     `include "axi_write_driver.sv"
     `include "axi_read_driver.sv"
     `include "axi_master_driver.sv"
