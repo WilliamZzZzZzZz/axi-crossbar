@@ -375,11 +375,11 @@ module axi_crossbar_tb;
     );
 
     initial begin
-        uvm_config_db#(virtual axi_if)::set(null, "uvm_test_top.env", "vif", s00_axi_if);
-        uvm_config_db#(virtual axi_if)::set(null, "uvm_test_top.env", "vif", s01_axi_if);
-        uvm_config_db#(virtual axi_if)::set(null, "uvm_test_top.env", "vif", m00_axi_if);
-        uvm_config_db#(virtual axi_if)::set(null, "uvm_test_top.env", "vif", m01_axi_if);
-        
+        uvm_config_db#(virtual axi_if)::set(null, "uvm_test_top.env", "s00_vif", s00_axi_if);
+        uvm_config_db#(virtual axi_if)::set(null, "uvm_test_top.env", "s01_vif", s01_axi_if);
+        uvm_config_db#(virtual axi_if)::set(null, "uvm_test_top.env", "m00_vif", m00_axi_if);
+        uvm_config_db#(virtual axi_if)::set(null, "uvm_test_top.env", "m01_vif", m01_axi_if);
+        run_test();
     end
 
 endmodule
