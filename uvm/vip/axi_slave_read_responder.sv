@@ -20,7 +20,8 @@ class axi_slave_read_responder extends uvm_object;
         forever begin
             @(negedge vif.arst)
             fork
-
+                accept_ar_channel();
+                drive_r_channel();
             join_none
         end
     endtask

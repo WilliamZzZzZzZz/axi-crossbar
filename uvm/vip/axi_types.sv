@@ -1,6 +1,18 @@
 `ifndef AXI_TYPES_SV
 `define AXI_TYPES_SV
 
+    localparam int DATA_WIDTH    = 32;
+    localparam int ADDR_WIDTH    = 32;
+    localparam int ID_WIDTH      = 8;
+    localparam int STRB_WIDTH    = (DATA_WIDTH/8);
+    localparam int QOS_WIDTH     = 4;
+    localparam int REGION_WIDTH  = 4;
+    localparam int AWUSER_WIDTH  = 1;
+    localparam int WUSER_WIDTH   = 1;
+    localparam int BUSER_WIDTH   = 1;
+    localparam int ARUSER_WIDTH  = 1;
+    localparam int RUSER_WIDTH   = 1;
+
     typedef enum bit {
         WRITE = 0,
         READ  = 1

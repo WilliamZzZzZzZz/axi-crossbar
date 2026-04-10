@@ -65,7 +65,7 @@ class axi_slave_write_responder extends uvm_object;
         end
     endtask
 
-    virtual task accept_w_channel;
+    virtual task accept_w_channel();
         axi_transaction tr;
         int beat_num;
         int i = 0;

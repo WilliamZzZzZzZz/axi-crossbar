@@ -79,14 +79,41 @@ class axi_master_driver extends uvm_driver#(axi_transaction);
 
     //AXI4 protocol：reset assert, 5 channels' VAILD should be 0  
     virtual task reset_listener();
-        @(posedge vif.arst)
-        vif.master_cb.awvalid   <= 1'b0;
-        vif.master_cb.wvalid    <= 1'b0;
-        vif.master_cb.arvalid   <= 1'b0;
-        //signals bvalid and rvalid are driven by slave, master has no access to dirve them
-        //so master only drive 3 signals to 0 while reset come, other 2 signals would be driven by slave(DUT)
-        // vif.master_cb.bvalid    <= 1'b0;
-        // vif.master_cb.rvalid    <= 1'b0;
+        forever begin
+            @(posedge vif.arst);
+            //protocol regulation: MASTER pull down 3 channels' VAILD
+            vif.master_cb.awvalid   <= '0;
+            vif.master_cb.wvalid    <= '0;
+            vif.master_cb.arvalid   <= '0;
+            //pull down other signals are better
+            //AW
+            vif.master_cb.awid      <= '0;
+            vif.master_cb.awaddr    <= '0;
+            vif.master_cb.awsize    <= '0;
+            vif.master_cb.awburst   <= '0;
+            vif.master_cb.awlock    <= '0;
+            vif.master_cb.awcache   <= '0;
+            vif.master_cb.awprot    <= '0;
+            vif.master_cb.awqos     <= '0;
+            vif.master_cb.awregion  <= '0;
+            vif.master_cb.awuser    <= '0;
+            //W
+            vif.master_cb.wdata     <= '0;
+            vif.master_cb.wstrb     <= '0;
+            vif.master_cb.wlast     <= '0;
+            vif.master_cb.wuser     <= '0;
+            //AR
+            vif.master_cb.arid      <= '0;
+            vif.master_cb.araddr    <= '0;
+            vif.master_cb.arsize    <= '0;
+            vif.master_cb.arburst   <= '0;
+            vif.master_cb.arlock    <= '0;
+            vif.master_cb.arcache   <= '0;
+            vif.master_cb.arprot    <= '0;
+            vif.master_cb.arqos     <= '0;
+            vif.master_cb.arregion  <= '0;
+            vif.master_cb.aruser    <= '0;
+        end
     endtask
 
 endclass
