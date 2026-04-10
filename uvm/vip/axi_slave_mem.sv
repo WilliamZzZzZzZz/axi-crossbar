@@ -23,9 +23,9 @@ class axi_slave_mem #(
 
     //store data with strb into mem word-by-word
     function void write_word_with_strb(
-        bit [ADDR_WIDTH - 1:0] word_addr;
-        bit [DATA_WIDTH - 1:0] new_data;
-        bit [STRB_WIDTH - 1:0] wstrb;
+        bit [ADDR_WIDTH - 1:0] word_addr,
+        bit [DATA_WIDTH - 1:0] new_data,
+        bit [STRB_WIDTH - 1:0] wstrb
     );
         bit [DATA_WIDTH - 1:0] old_data;
         bit [DATA_WIDTH - 1:0] updated_word;
@@ -46,8 +46,7 @@ class axi_slave_mem #(
         bit [ADDR_WIDTH - 1:0] base_addr,
         bit [1:0]              burst_type,
         bit [2:0]              burst_size,
-        int                    beat_idx,
-        int                    burst_len
+        int                    beat_idx
     );
         int unsigned           stride;
         int unsigned           total_bytes;
@@ -65,7 +64,7 @@ class axi_slave_mem #(
                 if(beat_idx == 0)
                     addr = base_addr;
                 else
-                    addr = aligned_addr + (beat_idx * stride);
+                    addr = aligned_start + (beat_idx * stride);
             end
             //TODO:WRAP
             default: begin

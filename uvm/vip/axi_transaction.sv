@@ -56,6 +56,7 @@ class axi_transaction extends uvm_sequence_item;
     bit [31:0]                  rid;            // read id
     bit [31:0]                  rdata[];        // read data 
     bit [1:0]                   rresp[];        // read response
+    bit                         rlast;
     bit [31:0]                  ruser;
     
     //--------------------------------------------------------------------------

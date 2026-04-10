@@ -85,7 +85,7 @@ interface axi_if #(
     logic [DATA_WIDTH-1:0]      rdata;     // Read data
     logic [1:0]                 rresp;     // Read response
     logic                       rlast;     // Read last
-    logic [RUSER_WIDTH-1:0]    ruser;
+    logic [RUSER_WIDTH-1:0]     ruser;
     logic                       rvalid;    // Read valid
     logic                       rready;    // Read ready
 
