@@ -1,8 +1,8 @@
-`ifndef AXI_WRITE_DRIVER_SV
-`define AXI_WRITE_DRIVER_SV
+`ifndef AXI_MASTER_WRITE_DRIVER_SV
+`define AXI_MASTER_WRITE_DRIVER_SV
 
-class axi_write_driver extends uvm_object;
-    `uvm_object_utils(axi_write_driver)
+class axi_master_write_driver extends uvm_object;
+    `uvm_object_utils(axi_master_write_driver)
 
     virtual axi_if      vif;
     axi_configuration   cfg;
@@ -12,7 +12,7 @@ class axi_write_driver extends uvm_object;
     mailbox #(axi_transaction) aw2b_mbx;
     mailbox #(axi_transaction) rsp_mbx;  // response back to master_driver
 
-    function new(string name = "axi_write_driver");
+    function new(string name = "axi_master_write_driver");
         super.new(name);
         req_mbx  = new();
         aw2w_mbx = new();

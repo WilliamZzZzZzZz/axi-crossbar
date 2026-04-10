@@ -7,8 +7,8 @@ class axi_master_driver extends uvm_driver#(axi_transaction);
     axi_configuration cfg;
     virtual axi_if vif;
 
-    axi_write_driver    write_drv;
-    axi_read_driver     read_drv;
+    axi_master_write_driver    write_drv;
+    axi_master_read_driver     read_drv;
 
     function new(string name = "axi_master_driver", uvm_component parent);
         super.new(name, parent);
@@ -16,8 +16,8 @@ class axi_master_driver extends uvm_driver#(axi_transaction);
 
     virtual function void build_phase(uvm_phase phase);
         super.build_phase(phase);
-        write_drv = axi_write_driver::type_id::create("write_drv");
-        read_drv  = axi_read_driver::type_id::create("read_drv");
+        write_drv = axi_master_write_driver::type_id::create("write_drv");
+        read_drv  = axi_master_read_driver::type_id::create("read_drv");
     endfunction
 
     virtual function void connect_phase(uvm_phase phase);

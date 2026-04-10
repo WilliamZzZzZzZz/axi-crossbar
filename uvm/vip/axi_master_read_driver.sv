@@ -1,8 +1,8 @@
 `ifndef AXI_READ_DRIVER_SV
 `define AXI_READ_DRIVER_SV
 
-class axi_read_driver extends uvm_object;
-    `uvm_object_utils(axi_read_driver)
+class axi_master_read_driver extends uvm_object;
+    `uvm_object_utils(axi_master_read_driver)
 
     virtual axi_if vif;
     axi_configuration cfg;
@@ -11,7 +11,7 @@ class axi_read_driver extends uvm_object;
     mailbox #(axi_transaction) ar2r_mbx;
     mailbox #(axi_transaction) rsp_mbx;  // response back to master_driver
 
-    function new(string name = "axi_read_driver");
+    function new(string name = "axi_master_read_driver");
         super.new(name);
         req_mbx  = new();
         ar2r_mbx = new();
