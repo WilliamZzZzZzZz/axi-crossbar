@@ -10,7 +10,7 @@ package axiram_pkg;
     `include "axiram_virtual_sequencer.sv"
     `include "axiram_scoreboard.sv"
     `include "axiram_coverage.sv"
-    `include "axiram_env.sv"
+    `include "axi_crossbar_env.sv"
     `include "axiram_virt_seq_lib.svh"
     `include "axiram_tests_lib.svh"
     

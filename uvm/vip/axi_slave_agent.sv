@@ -18,13 +18,6 @@ class axi_slave_agent extends uvm_agent;
 
     function void build_phase(uvm_phase phase);
         super.build_phase(phase);
-
-        if(!uvm_config_db#(virtual axi_if)::get(this, "", "vif", vif))
-            `uvm_fatal(get_type_name(), "Failed to get vif")
-
-        if(!uvm_config_db#(axi_configuration)::get(this, "", "cfg", cfg))
-            `uvm_fatal(get_type_name(), "Failed to get cfg")
-
         responder = axi_slave_responder::type_id::create("responder", this);
         monitor = axi_master_monitor::type_id::create("monitor", this);
     endfunction

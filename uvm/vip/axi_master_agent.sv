@@ -20,14 +20,6 @@ class axi_master_agent extends uvm_agent;
 
     function void build_phase(uvm_phase phase);
         super.build_phase(phase);
-
-        if(!uvm_config_db#(virtual axi_if)::get(this, "", "vif", vif)) begin
-            `uvm_fatal(get_type_name(), "Failed to get vif from config_db")
-        end
-        if(!uvm_config_db#(axi_configuration)::get(this, "", "cfg", cfg)) begin
-            `uvm_fatal(get_type_name(), "Failed to get cfg from config_db")
-        end 
-               
         sequencer = axi_master_sequencer::type_id::create("sequencer", this);
         driver = axi_master_driver::type_id::create("driver", this);
         monitor = axi_monitor::type_id::create("monitor", this); 
