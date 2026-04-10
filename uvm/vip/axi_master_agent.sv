@@ -30,8 +30,7 @@ class axi_master_agent extends uvm_agent;
                
         sequencer = axi_master_sequencer::type_id::create("sequencer", this);
         driver = axi_master_driver::type_id::create("driver", this);
-        monitor = axi_master_monitor::type_id::create("monitor", this); 
-        
+        monitor = axi_monitor::type_id::create("monitor", this); 
     endfunction
 
     function void connect_phase(uvm_phase phase);

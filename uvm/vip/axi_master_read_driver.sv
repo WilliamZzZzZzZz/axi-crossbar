@@ -49,7 +49,9 @@ class axi_master_read_driver extends uvm_object;
             vif.master_cb.arlock    <= tr.arlock;
             vif.master_cb.arcache   <= tr.arcache;
             vif.master_cb.arprot    <= tr.arprot;
-            
+            vif.master_cb.arqos     <= tr.arqos;
+            vif.master_cb.arregion  <= tr.arregion;
+            vif.master_cb.aruser    <= tr.aruser;
             //handshake polling
             do begin
                 @(vif.master_cb);

@@ -69,7 +69,7 @@ class axi_slave_mem #(
             //TODO:WRAP
             default: begin
                 addr = base_addr;
-                `uvm_error(get_type_name(), "the burst_type is illegal")
+                $error("calc_beat_addr: burst_type = %0b is illegal", burst_type);
             end
         endcase
         return addr;

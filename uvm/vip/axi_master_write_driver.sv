@@ -54,7 +54,9 @@ class axi_master_write_driver extends uvm_object;
             vif.master_cb.awlock    <= tr.awlock;
             vif.master_cb.awcache   <= tr.awcache;
             vif.master_cb.awprot    <= tr.awprot;
-            
+            vif.master_cb.awqos     <= tr.awqos;
+            vif.master_cb.awregion  <= tr.awregion;
+            vif.master_cb.awuser    <= tr.awuser;            
             //hanshake polling
             do begin
                 @(vif.master_cb);

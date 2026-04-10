@@ -18,11 +18,13 @@ class axi_slave_read_responder extends uvm_object;
 
     virtual task run_read_channels();
         forever begin
-            @(negedge vif.arst)
+            @(negedge vif.arst);
             fork
                 accept_ar_channel();
                 drive_r_channel();
             join_none
+            @(posedge vif.arst);
+            disable fork;   //over reset, unfinished threads all should be killed
         end
     endtask
 
@@ -33,7 +35,7 @@ class axi_slave_read_responder extends uvm_object;
             //pull up valid and wait for handshake
             vif.slave_cb.arready <= 1'b1;
             do begin
-                @(vif.slave_cb)
+                @(vif.slave_cb);
             end while(vif.slave_cb.arvalid === 1'b0);
             //handshake success
             tr.arid     = vif.slave_cb.arid;
@@ -63,19 +65,19 @@ class axi_slave_read_responder extends uvm_object;
 
         forever begin
             ar2r_mbx.get(tr);
-            beat_num = int'(tr.awlen) + 1;
+            beat_num = int'(tr.arlen) + 1;
 
             //deal with every single beat
             for(int i = 0; i < beat_num; i++) begin
                 //got every beat's addr
                 beat_addr = axi_slave_mem::calc_beat_addr(
-                    tr.awaddr,
-                    tr.awburst,
-                    tr.awsize,
+                    tr.araddr,
+                    tr.arburst,
+                    tr.arsize,
                     i
                 );
                 word_addr = {beat_addr[ADDR_WIDTH - 1:2], 2'b00};
-                word_data = read_word(word_addr);
+                word_data = mem.read_word(word_addr);
                 //drive bus signals
                 @(vif.slave_cb);
                 vif.slave_cb.rid    <= tr.arid;

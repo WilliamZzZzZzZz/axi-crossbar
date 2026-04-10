@@ -25,6 +25,8 @@ class axi_slave_write_responder extends uvm_object;
                 accept_w_channel();
                 drive_b_channel();
             join_none
+            @(posedge vif.arst);
+            disable fork;   //over reset, unfinished threads all should be killed
         end
     endtask
 
@@ -37,9 +39,8 @@ class axi_slave_write_responder extends uvm_object;
             do begin
                 @(vif.slave_cb);
             end while(vif.slave_cb.awvalid === 1'b0);
-
             //handshake success
-            @(vif.slave_cb)
+
             tr.trans_type = WRITE;
             tr.awid       = vif.slave_cb.awid;
             tr.awaddr     = vif.slave_cb.awaddr;
@@ -104,17 +105,17 @@ class axi_slave_write_responder extends uvm_object;
                     end
                 end
                 else begin  //it's the last beat and into this loop, check wlast whether is 1
-                    if(vif.slave_cb.wlast !== 1'b1)
-                        `uvm_error(get_type_name(), $sformatf(
-                            "WLAST set 0 in the last beat!"
-                        ))
-                end
-                tr.wbeat_finish = 1;
+                    if(vif.slave_cb.wlast !== 1'b1) begin
+                        `uvm_error(get_type_name(), $sformatf("WLAST set 0 in the last beat!"))
+                    end
+                    tr.wbeat_finish = 1;
+                end        
                 `uvm_info(get_type_name(), $sformatf(
                     "W beat [%0d/%0d] accepted: wdata = 0x%0h wstrb = 0x%0h wlast = %0b",
-                    i, beat_num - 1, wdata[i], wstrb[i], vif.slave_cb.wlast
+                    i, beat_num - 1, tr.wdata[i], tr.wstrb[i], vif.slave_cb.wlast
                 ), UVM_MEDIUM)
             end
+            
             //after handshake, pull down ready
             vif.slave_cb.wready <= 1'b0;
             w2b_mbx.put(tr);

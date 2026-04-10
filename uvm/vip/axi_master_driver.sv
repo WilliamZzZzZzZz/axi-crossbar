@@ -30,7 +30,6 @@ class axi_master_driver extends uvm_driver#(axi_transaction);
 
     //start 6 Threads
     task run_phase(uvm_phase phase);
-        axi_transaction req_item;
         super.run_phase(phase);
         // assign vif/cfg to sub-drivers here (run_phase guarantees they are set)
         write_drv.vif = vif;

@@ -33,6 +33,13 @@ class axi_slave_responder extends uvm_component;
 
     task run_phase(uvm_phase phase);
         super.run_phase(phase);
+        write_rpd.vif = vif;
+        write_rpd.cfg = cfg;
+        write_rpd.mem = mem;
+        read_rpd.vif = vif;
+        read_rpd.cfg = cfg;
+        read_rpd.mem = mem;
+                
         fork
             write_rpd.run_write_channels();
             read_rpd.run_read_channels();
