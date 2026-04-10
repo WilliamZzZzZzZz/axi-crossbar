@@ -18,46 +18,46 @@ class axi_transaction extends uvm_sequence_item;
     bit response_requested = 1;
     
     //AW
-    rand bit [31:0]             awid;      // write address id
-    rand bit [31:0]             awaddr;    // write address
-    rand burst_len_enum         awlen;     // burst length(0-255)
-    rand burst_size_enum        awsize;    // burst size(00-1byte, 01-2bytes, 10-4bytes, 11-8bytes)
-    rand burst_type_enum        awburst;   // burst type(00-FIXED, 01-INCR, 10-WRAP)
-    rand lock_type_enum         awlock;    // lock type(0-normal access, 1-exclusive access)
-    rand cache_type_enum        awcache;   // cache type
-    rand prot_type_enum         awprot;    // protection type(bit[0]-privileged, bit[1]-secure, bit[2]-instruction)
-    rand bit [3:0]              awqos;
-    rand bit [3:0]              awregion;
-    rand bit [31:0]             awuser;
+    rand bit [ID_WIDTH - 1:0]       awid;      // write address id
+    rand bit [ADDR_WIDTH - 1:0]     awaddr;    // write address
+    rand burst_len_enum             awlen;     // burst length(0-255)
+    rand burst_size_enum            awsize;    // burst size(00-1byte, 01-2bytes, 10-4bytes, 11-8bytes)
+    rand burst_type_enum            awburst;   // burst type(00-FIXED, 01-INCR, 10-WRAP)
+    rand lock_type_enum             awlock;    // lock type(0-normal access, 1-exclusive access)
+    rand cache_type_enum            awcache;   // cache type
+    rand prot_type_enum             awprot;    // protection type(bit[0]-privileged, bit[1]-secure, bit[2]-instruction)
+    rand bit [QOS_WIDTH - 1:0]      awqos;
+    rand bit [REGION_WIDTH - 1:0]   awregion;
+    rand bit [WUSER_WIDTH - 1:0]    awuser;
 
     //W
-    rand bit [31:0]             wdata[];   // write data
-    rand bit [15:0]             wstrb[];   // write strobes(1 bit wstrb control 8bits wdata) 1-allow write in, 0-masked
+    rand bit [DATA_WIDTH - 1:0]     wdata[];   // write data
+    rand bit [STRB_WIDTH - 1:0]     wstrb[];   // write strobes(1 bit wstrb control 8bits wdata) 1-allow write in, 0-masked
 
     //B
-    bit [7:0]                   bid;       // response id(which data)
-    bit [1:0]                   bresp;     // write response from slave(00-OKAY, 01-EXOKAY, 10-SLVERR, 11-DECERR)
-    bit [31:0]                  buser;
+    bit [ID_WIDTH - 1:0]            bid;       // response id(which data)
+    bit [1:0]                       bresp;     // write response from slave(00-OKAY, 01-EXOKAY, 10-SLVERR, 11-DECERR)
+    bit [BUSER_WIDTH - 1:0]         buser;
 
     //AR
-    rand bit [7:0]              arid;      // read address id
-    rand bit [15:0]             araddr;    // read address
-    rand burst_len_enum         arlen;     // burst length(0-255)
-    rand burst_size_enum        arsize;    // burst size
-    rand burst_type_enum        arburst;   // burst type
-    rand lock_type_enum         arlock;    // lock type
-    rand cache_type_enum        arcache;   // cache type
-    rand prot_type_enum         arprot;    // protection type
-    rand bit [3:0]              arqos;
-    rand bit [3:0]              arregion;
-    rand bit [31:0]             aruser;
+    rand bit [ID_WIDTH - 1:0]       arid;      // read address id
+    rand bit [ADDR_WIDTH - 1:0]     araddr;    // read address
+    rand burst_len_enum             arlen;     // burst length(0-255)
+    rand burst_size_enum            arsize;    // burst size
+    rand burst_type_enum            arburst;   // burst type
+    rand lock_type_enum             arlock;    // lock type
+    rand cache_type_enum            arcache;   // cache type
+    rand prot_type_enum             arprot;    // protection type
+    rand bit [QOS_WIDTH - 1:0]      arqos;
+    rand bit [REGION_WIDTH - 1:0]   arregion;
+    rand bit [ARUSER_WIDTH -1:0]    aruser;
 
     //R
-    bit [31:0]                  rid;            // read id
-    bit [31:0]                  rdata[];        // read data 
-    bit [1:0]                   rresp[];        // read response
-    bit                         rlast;
-    bit [31:0]                  ruser;
+    bit [ID_WIDTH - 1:0]            rid;            // read id
+    bit [DATA_WIDTH - 1:0]          rdata[];        // read data 
+    bit [1:0]                       rresp[];        // read response
+    bit                             rlast;
+    bit [RUSER_WIDTH - 1:0]         ruser;
     
     //--------------------------------------------------------------------------
     // constraint

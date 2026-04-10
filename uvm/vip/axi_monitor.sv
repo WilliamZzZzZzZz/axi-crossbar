@@ -1,8 +1,8 @@
-`ifndef AXI_MASTER_MONITOR_SV
-`define AXI_MASTER_MONITOR_SV
+`ifndef AXI_MONITOR_SV
+`define AXI_MONITOR_SV
 
-class axi_master_monitor extends uvm_monitor;
-    `uvm_component_utils(axi_master_monitor)
+class axi_monitor extends uvm_monitor;
+    `uvm_component_utils(axi_monitor)
 
     virtual axi_if vif;
     axi_configuration cfg;
@@ -13,7 +13,7 @@ class axi_master_monitor extends uvm_monitor;
     axi_transaction write_trans_queue[$];
     axi_transaction read_trans_queue[$];
 
-    function new(string name = "axi_master_monitor", uvm_component parent);
+    function new(string name = "axi_monitor", uvm_component parent);
         super.new(name, parent);
         item_observed_port = new("item_observed_port", this);
     endfunction
@@ -30,12 +30,12 @@ class axi_master_monitor extends uvm_monitor;
 
     virtual task monitor_write_transaction();
         axi_transaction tr, temp_tr;
-        bit [7:0] current_id;
+        bit [ID_WIDTH - 1:0] current_id;
         int q_index[$];
         forever begin
             @(posedge vif.aclk);
             if(vif.arst) continue;      //doubt!
-            //AW channel
+            //==================== AW channel====================
             if(vif.monitor_cb.awvalid && vif.monitor_cb.awready) begin
                 tr = axi_transaction::type_id::create("tr", this);
                 //handshake success then sample signals
@@ -48,6 +48,9 @@ class axi_master_monitor extends uvm_monitor;
                 tr.awlock   = vif.monitor_cb.awlock;
                 tr.awcache  = vif.monitor_cb.awcache;
                 tr.awprot   = vif.monitor_cb.awprot;
+                tr.awqos    = vif.monitor_cb.awqos;
+                tr.awregion = vif.monitor_cb.awregion;
+                tr.awuser   = vif.monitor_cb.awuser;
 
                 //after handshake success, initial arrays
                 tr.wdata = new[tr.awlen + 1];
@@ -59,7 +62,7 @@ class axi_master_monitor extends uvm_monitor;
                 //push unfinish tr into queue temporarily
                 write_trans_queue.push_back(tr);
             end
-            //W channel
+            //==================== W channel ====================
             if(vif.monitor_cb.wvalid && vif.monitor_cb.wready) begin
                 int w_idx[$];
                 w_idx = write_trans_queue.find_first_index() with (!item.wbeat_finish);
@@ -81,7 +84,7 @@ class axi_master_monitor extends uvm_monitor;
                     `uvm_error(get_type_name(), "W channel: queue size < 0")
                 end
             end
-            //B channel
+            //==================== B channel ====================
             if(vif.monitor_cb.bvalid && vif.monitor_cb.bready) begin
                 //store current id
                 current_id = vif.monitor_cb.bid;
@@ -95,13 +98,15 @@ class axi_master_monitor extends uvm_monitor;
 
                     temp_tr.bid       = vif.monitor_cb.bid;
                     temp_tr.bresp     = vif.monitor_cb.bresp;
+                    temp_tr.buser     = vif.monitor_cb.buser;
                     temp_tr.b_finish  = 1;
                     //a tran via 3 channels' write operations finally completed, full info now stroed in temp_tr
                     item_observed_port.write(temp_tr);
                     write_trans_queue.delete(idx);
                 end
                 else begin
-                    `uvm_error(get_type_name(), "B channel: queue size < 0")
+                    `uvm_error(get_type_name(), $sformatf(
+                        "B channel: bid=0x%0h not found in queue", current_id))
                 end
             end
         end
@@ -109,12 +114,12 @@ class axi_master_monitor extends uvm_monitor;
 
     virtual task monitor_read_transaction();
         axi_transaction tr, temp_tr;
-        bit [7:0] current_id;
+        bit [ID_WIDTH - 1:0] current_id;
         int q_index[$];
         forever begin
             @(posedge vif.aclk)
             if (vif.arst) continue;
-            //AR channel
+            //==================== AR channel ====================
             if(vif.monitor_cb.arvalid && vif.monitor_cb.arready) begin
                 tr = axi_transaction::type_id::create("tr", this);
                 tr.trans_type = READ;
@@ -126,6 +131,9 @@ class axi_master_monitor extends uvm_monitor;
                 tr.arlock   = vif.monitor_cb.arlock;
                 tr.arcache  = vif.monitor_cb.arcache;
                 tr.arprot   = vif.monitor_cb.arprot;
+                tr.arqos    = vif.monitor_cb.arqos;
+                tr.arregion = vif.monitor_cb.arregion;
+                tr.aruser   = vif.monitor_cb.aruser;
 
                 tr.rdata = new[tr.arlen + 1];
                 tr.rresp = new[tr.arlen + 1];
@@ -133,7 +141,7 @@ class axi_master_monitor extends uvm_monitor;
                 tr.rbeat_finish = 0;
                 read_trans_queue.push_back(tr);
             end
-            //R channel
+            //==================== R channel ====================
             if(vif.monitor_cb.rvalid && vif.monitor_cb.rready) begin
                 if(read_trans_queue.size() > 0) begin
                     current_id = vif.monitor_cb.rid;
@@ -152,6 +160,7 @@ class axi_master_monitor extends uvm_monitor;
                             temp_tr.current_rbeat_count++;
                             //every single beat need to check rlast
                             if(vif.monitor_cb.rlast) begin
+                                temp_tr.ruser = vif.monitor_cb.ruser;
                                 temp_tr.rbeat_finish = 1;
                                 item_observed_port.write(temp_tr);
                                 read_trans_queue.delete(idx);

@@ -7,7 +7,7 @@ class axi_master_agent extends uvm_agent;
     axi_configuration cfg;
     axi_master_sequencer sequencer;
     axi_master_driver driver;
-    axi_master_monitor monitor;
+    axi_monitor monitor;
 
     uvm_analysis_port #(axi_transaction) item_collected_port;
 

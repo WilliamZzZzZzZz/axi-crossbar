@@ -15,7 +15,7 @@ package axi_pkg;
     `include "axi_write_driver.sv"
     `include "axi_read_driver.sv"
     `include "axi_master_driver.sv"
-    `include "axi_master_monitor.sv"
+    `include "axi_monitor.sv"
     `include "axi_master_sequencer.sv"
     `include "axi_master_agent.sv"
     `include "axi_slave_agent.sv"
