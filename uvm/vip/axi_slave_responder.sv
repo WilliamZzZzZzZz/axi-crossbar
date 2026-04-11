@@ -4,11 +4,11 @@
 class axi_slave_responder extends uvm_component;
     `uvm_component_utils(axi_slave_responder)
 
-    virtual axi_if vif;
-    axi_configuration cfg;
-    axi_slave_write_responder write_rpd;
-    axi_slave_read_responder  read_rpd;
-    axi_slave_mem  mem;
+    virtual axi_if#(.ID_WIDTH(M_ID_WIDTH))  vif;
+    axi_configuration                       cfg;
+    axi_slave_write_responder               write_rpd;
+    axi_slave_read_responder                read_rpd;
+    axi_slave_mem                           mem;
 
     function new(string name = "axi_slave_responder", uvm_component parent = null);
         super.new(name, parent);

@@ -4,9 +4,9 @@
 class axi_slave_write_responder extends uvm_object;
     `uvm_object_utils(axi_slave_write_responder)
 
-    virtual axi_if      vif;
-    axi_configuration   cfg;
-    axi_slave_mem       mem;
+    virtual axi_if#(.ID_WIDTH(M_ID_WIDTH))  vif;
+    axi_configuration                       cfg;
+    axi_slave_mem                           mem;
 
     mailbox #(axi_transaction) aw2w_mbx;
     mailbox #(axi_transaction) w2b_mbx;

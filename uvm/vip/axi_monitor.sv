@@ -1,11 +1,11 @@
 `ifndef AXI_MONITOR_SV
 `define AXI_MONITOR_SV
 
-class axi_monitor extends uvm_monitor;
-    `uvm_component_utils(axi_monitor)
+class axi_monitor #(int VIF_ID_WIDTH = ID_WIDTH) extends uvm_monitor;
+    `uvm_component_utils(axi_monitor#(VIF_ID_WIDTH))
 
-    virtual axi_if vif;
-    axi_configuration cfg;
+    virtual axi_if#(.ID_WIDTH(VIF_ID_WIDTH))    vif;
+    axi_configuration                           cfg;
 
     uvm_analysis_port #(axi_transaction) item_observed_port;
 
@@ -30,7 +30,7 @@ class axi_monitor extends uvm_monitor;
 
     virtual task monitor_write_transaction();
         axi_transaction tr, temp_tr;
-        bit [ID_WIDTH - 1:0] current_id;
+        bit [M_ID_WIDTH - 1:0] current_id;
         int q_index[$];
         forever begin
             @(posedge vif.aclk);
@@ -114,7 +114,7 @@ class axi_monitor extends uvm_monitor;
 
     virtual task monitor_read_transaction();
         axi_transaction tr, temp_tr;
-        bit [ID_WIDTH - 1:0] current_id;
+        bit [M_ID_WIDTH - 1:0] current_id;
         int q_index[$];
         forever begin
             @(posedge vif.aclk)

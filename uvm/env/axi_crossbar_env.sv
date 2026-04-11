@@ -21,10 +21,10 @@ class axi_crossbar_env extends uvm_env;
         super.build_phase(phase);
 
         cfg = axi_configuration::type_id::create("cfg");
-        config_db#(axi_configuration cfg)::set(this, "mst_agent00", "cfg", cfg);
-        config_db#(axi_configuration cfg)::set(this, "mst_agent01", "cfg", cfg);
-        config_db#(axi_configuration cfg)::set(this, "slv_agent00", "cfg", cfg);
-        config_db#(axi_configuration cfg)::set(this, "slv_agent01", "cfg", cfg);
+        uvm_config_db#(axi_configuration)::set(this, "mst_agent00", "cfg", cfg);
+        uvm_config_db#(axi_configuration)::set(this, "mst_agent01", "cfg", cfg);
+        uvm_config_db#(axi_configuration)::set(this, "slv_agent00", "cfg", cfg);
+        uvm_config_db#(axi_configuration)::set(this, "slv_agent01", "cfg", cfg);
 
         mst_agent00 = axi_master_agent::type_id::create("mst_agent00", this);
         mst_agent01 = axi_master_agent::type_id::create("mst_agent01", this);

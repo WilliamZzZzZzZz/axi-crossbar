@@ -377,8 +377,8 @@ module axi_crossbar_tb;
     initial begin
         uvm_config_db#(virtual axi_if)::set(null, "uvm_test_top.env.mst_agent00", "vif", s00_axi_if);
         uvm_config_db#(virtual axi_if)::set(null, "uvm_test_top.env.mst_agent01", "vif", s01_axi_if);
-        uvm_config_db#(virtual axi_if)::set(null, "uvm_test_top.env.slv_agent00", "vif", m00_axi_if);
-        uvm_config_db#(virtual axi_if)::set(null, "uvm_test_top.env.slv_agent01", "vif", m01_axi_if);
+        uvm_config_db#(virtual axi_if#(.ID_WIDTH(M_ID_WIDTH)))::set(null, "uvm_test_top.env.slv_agent00", "vif", m00_axi_if);
+        uvm_config_db#(virtual axi_if#(.ID_WIDTH(M_ID_WIDTH)))::set(null, "uvm_test_top.env.slv_agent01", "vif", m01_axi_if);
         run_test();
     end
 
