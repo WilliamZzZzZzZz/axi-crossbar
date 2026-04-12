@@ -42,7 +42,8 @@ class axi_slave_write_responder extends uvm_object;
             //handshake success
 
             tr.trans_type = WRITE;
-            tr.awid       = vif.slave_cb.awid;
+            tr.m_awid     = vif.slave_cb.awid;
+            tr.awid       = vif.slave_cb.awid[ID_WIDTH - 1:0];
             tr.awaddr     = vif.slave_cb.awaddr;
             tr.awlen      = vif.slave_cb.awlen;
             tr.awsize     = vif.slave_cb.awsize;
@@ -156,9 +157,12 @@ class axi_slave_write_responder extends uvm_object;
                     i, beat_addr, word_addr, tr.wdata[i], tr.wstrb[i], mem.read_word(word_addr)
                 ), UVM_MEDIUM)
             end
+
+            tr.m_bid = tr.m_awid;
+            tr.bid   = tr.awid;
             //drive signals on bus before pull up valid
             @(vif.slave_cb);
-            vif.slave_cb.bid    <= tr.awid;
+            vif.slave_cb.bid    <= tr.m_bid;
             vif.slave_cb.bresp  <= 2'b00;     //default is OKAY
             vif.slave_cb.buser  <= tr.awuser;
             vif.slave_cb.bvalid <= 1'b1;      //pull up valid and wait for handshake

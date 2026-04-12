@@ -2,7 +2,7 @@
 `define AXI_CROSSBAR_ENV_SV
 
 class axi_crossbar_env extends uvm_env;
-    `uvm_component_utils(axiram_env)
+    `uvm_component_utils(axi_crossbar_env)
 
     axi_configuration           cfg;
     axi_master_agent            mst_agent00;

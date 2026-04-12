@@ -4,8 +4,8 @@
 class axi_master_read_driver extends uvm_object;
     `uvm_object_utils(axi_master_read_driver)
 
-    virtual axi_if vif;
-    axi_configuration cfg;
+    virtual axi_if#(.ID_WIDTH(ID_WIDTH))    vif;
+    axi_configuration                       cfg;
 
     mailbox #(axi_transaction) req_mbx;
     mailbox #(axi_transaction) ar2r_mbx;

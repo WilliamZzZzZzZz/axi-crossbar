@@ -38,7 +38,8 @@ class axi_slave_read_responder extends uvm_object;
                 @(vif.slave_cb);
             end while(vif.slave_cb.arvalid === 1'b0);
             //handshake success
-            tr.arid     = vif.slave_cb.arid;
+            tr.m_arid   = vif.slave_cb.arid;
+            tr.arid     = vif.slave_cb.arid[ID_WIDTH - 1:0]
             tr.araddr   = vif.slave_cb.araddr;
             tr.arlen    = vif.slave_cb.arlen;
             tr.arsize   = vif.slave_cb.arsize;
@@ -78,9 +79,13 @@ class axi_slave_read_responder extends uvm_object;
                 );
                 word_addr = {beat_addr[ADDR_WIDTH - 1:2], 2'b00};
                 word_data = mem.read_word(word_addr);
+
+                tr.m_rid = tr.m_arid;
+                tr.rid   = tr.arid;
+
                 //drive bus signals
                 @(vif.slave_cb);
-                vif.slave_cb.rid    <= tr.arid;
+                vif.slave_cb.rid    <= tr.m_rid;
                 vif.slave_cb.rdata  <= word_data;
                 vif.slave_cb.rresp  <= 2'b00;
                 vif.slave_cb.rlast  <= (i == beat_num - 1) ? 1'b1 : 1'b0;

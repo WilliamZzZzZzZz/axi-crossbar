@@ -16,9 +16,26 @@ class axi_transaction extends uvm_sequence_item;
     
     //pipeline-mode, driver checks this flag before sending response back
     bit response_requested = 1;
+
+    // ------------------------------------------------------------------
+    // Source-side / upstream IDs
+    // These are the IDs visible to the upstream AXI master (8-bit)
+    // ------------------------------------------------------------------
+    rand bit [ID_WIDTH - 1:0]       awid;
+    bit  [ID_WIDTH - 1:0]           bid;
+    rand bit [ID_WIDTH - 1:0]       arid;
+    bit  [ID_WIDTH - 1:0]           rid;
+
+    // ------------------------------------------------------------------
+    // Downstream / expanded IDs
+    // These are the IDs visible on crossbar m_axi side (9-bit in 2x2)
+    // ------------------------------------------------------------------
+    bit [M_ID_WIDTH - 1:0]          m_awid;
+    bit [M_ID_WIDTH - 1:0]          m_bid;
+    bit [M_ID_WIDTH - 1:0]          m_arid;
+    bit [M_ID_WIDTH - 1:0]          m_rid;    
     
     //AW
-    rand bit [M_ID_WIDTH - 1:0]     awid;      // write address id
     rand bit [ADDR_WIDTH - 1:0]     awaddr;    // write address
     rand burst_len_enum             awlen;     // burst length(0-255)
     rand burst_size_enum            awsize;    // burst size(00-1byte, 01-2bytes, 10-4bytes, 11-8bytes)
@@ -28,19 +45,17 @@ class axi_transaction extends uvm_sequence_item;
     rand prot_type_enum             awprot;    // protection type(bit[0]-privileged, bit[1]-secure, bit[2]-instruction)
     rand bit [QOS_WIDTH - 1:0]      awqos;
     rand bit [REGION_WIDTH - 1:0]   awregion;
-    rand bit [WUSER_WIDTH - 1:0]    awuser;
+    rand bit [AWUSER_WIDTH - 1:0]    awuser;
 
     //W
     rand bit [DATA_WIDTH - 1:0]     wdata[];   // write data
     rand bit [STRB_WIDTH - 1:0]     wstrb[];   // write strobes(1 bit wstrb control 8bits wdata) 1-allow write in, 0-masked
 
     //B
-    bit [M_ID_WIDTH - 1:0]          bid;       // response id(which data)
     bit [1:0]                       bresp;     // write response from slave(00-OKAY, 01-EXOKAY, 10-SLVERR, 11-DECERR)
     bit [BUSER_WIDTH - 1:0]         buser;
 
     //AR
-    rand bit [M_ID_WIDTH - 1:0]     arid;      // read address id
     rand bit [ADDR_WIDTH - 1:0]     araddr;    // read address
     rand burst_len_enum             arlen;     // burst length(0-255)
     rand burst_size_enum            arsize;    // burst size
@@ -53,7 +68,6 @@ class axi_transaction extends uvm_sequence_item;
     rand bit [ARUSER_WIDTH -1:0]    aruser;
 
     //R
-    bit [M_ID_WIDTH - 1:0]          rid;            // read id
     bit [DATA_WIDTH - 1:0]          rdata[];        // read data 
     bit [1:0]                       rresp[];        // read response
     bit                             rlast;

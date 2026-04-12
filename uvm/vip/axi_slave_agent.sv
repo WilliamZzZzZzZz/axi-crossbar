@@ -6,7 +6,7 @@ class axi_slave_agent extends uvm_agent;
 
     axi_configuration                       cfg;
     axi_slave_responder                     responder;
-    axi_monitor#(M_ID_WIDTH)                monitor;
+    axi_monitor#(M_ID_WIDTH, 1)                monitor;
     virtual axi_if#(.ID_WIDTH(M_ID_WIDTH))  vif;
 
     uvm_analysis_port #(axi_transaction) item_collected_port;
@@ -27,7 +27,7 @@ class axi_slave_agent extends uvm_agent;
         end
 
         responder = axi_slave_responder::type_id::create("responder", this);
-        monitor = axi_monitor#(M_ID_WIDTH)::type_id::create("monitor", this);
+        monitor = axi_monitor#(M_ID_WIDTH, 1)::type_id::create("monitor", this);
     endfunction
 
     function void connect_phase(uvm_phase phase);

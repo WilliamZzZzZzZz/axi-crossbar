@@ -1,8 +1,8 @@
 `ifndef AXI_MONITOR_SV
 `define AXI_MONITOR_SV
 
-class axi_monitor #(int VIF_ID_WIDTH = ID_WIDTH) extends uvm_monitor;
-    `uvm_component_utils(axi_monitor#(VIF_ID_WIDTH))
+class axi_monitor #(int VIF_ID_WIDTH = ID_WIDTH, bit IS_DOWNSTREAM = 0) extends uvm_monitor;
+    `uvm_component_param_utils(axi_monitor#(VIF_ID_WIDTH, IS_DOWNSTREAM))
 
     virtual axi_if#(.ID_WIDTH(VIF_ID_WIDTH))    vif;
     axi_configuration                           cfg;
@@ -30,7 +30,7 @@ class axi_monitor #(int VIF_ID_WIDTH = ID_WIDTH) extends uvm_monitor;
 
     virtual task monitor_write_transaction();
         axi_transaction tr, temp_tr;
-        bit [M_ID_WIDTH - 1:0] current_id;
+        bit [VIF_ID_WIDTH - 1:0] current_id;
         int q_index[$];
         forever begin
             @(posedge vif.aclk);
@@ -38,9 +38,18 @@ class axi_monitor #(int VIF_ID_WIDTH = ID_WIDTH) extends uvm_monitor;
             //==================== AW channel====================
             if(vif.monitor_cb.awvalid && vif.monitor_cb.awready) begin
                 tr = axi_transaction::type_id::create("tr", this);
-                //handshake success then sample signals
                 tr.trans_type = WRITE;
-                tr.awid     = vif.monitor_cb.awid;
+
+                if(IS_DOWNSTREAM) begin
+                    tr.m_awid = vif.monitor_cb.awid;
+                    tr.awid   = vif.monitor_cb.awid[ID_WIDTH - 1:0];
+                end
+                else begin
+                    tr.awid   = vif.monitor_cb.awid;
+                    tr.m_awid = '0;
+                end
+
+                //handshake success then sample signals
                 tr.awaddr   = vif.monitor_cb.awaddr;
                 tr.awlen    = vif.monitor_cb.awlen;
                 tr.awsize   = vif.monitor_cb.awsize;
@@ -88,15 +97,31 @@ class axi_monitor #(int VIF_ID_WIDTH = ID_WIDTH) extends uvm_monitor;
             if(vif.monitor_cb.bvalid && vif.monitor_cb.bready) begin
                 //store current id
                 current_id = vif.monitor_cb.bid;
+
                 //search for correct tr's index in queue
-                q_index = write_trans_queue.find_index() with (
-                    item.awid == current_id && item.wbeat_finish && !item.b_finish
-                );
+                if(IS_DOWNSTREAM) begin
+                    q_index = write_trans_queue.find_index() with (
+                        item.awid == current_id && item.wbeat_finish && !item.b_finish
+                    );
+                end
+                else begin
+                    q_index = write_trans_queue.find_index() with (
+                        item.awid == current_id[ID_WIDTH - 1:0] && item.wbeat_finish && !item.b_finish                    
+                end
+
                 if(q_index.size() > 0) begin
                     int idx = q_index[0];
                     temp_tr = write_trans_queue[idx];
 
-                    temp_tr.bid       = vif.monitor_cb.bid;
+                    if(IS_DOWNSTREAM) begin
+                        temp_tr.m_bid = vif.monitor_cb.bid;
+                        temp_tr.bid   = vif.monitor_cb.bid[ID_WIDTH - 1:0];
+                    end
+                    else begin
+                        temp_tr.bid   = vif.monitor_cb.bid;
+                        temp_tr.m_bid = '0;
+                    end
+
                     temp_tr.bresp     = vif.monitor_cb.bresp;
                     temp_tr.buser     = vif.monitor_cb.buser;
                     temp_tr.b_finish  = 1;
@@ -123,7 +148,16 @@ class axi_monitor #(int VIF_ID_WIDTH = ID_WIDTH) extends uvm_monitor;
             if(vif.monitor_cb.arvalid && vif.monitor_cb.arready) begin
                 tr = axi_transaction::type_id::create("tr", this);
                 tr.trans_type = READ;
-                tr.arid     = vif.monitor_cb.arid;
+
+                if (IS_DOWNSTREAM) begin
+                    tr.m_arid = vif.monitor_cb.arid;
+                    tr.arid   = vif.monitor_cb.arid[ID_WIDTH-1:0];
+                end
+                else begin
+                    tr.arid   = vif.monitor_cb.arid;
+                    tr.m_arid = '0;
+                end
+
                 tr.araddr   = vif.monitor_cb.araddr;
                 tr.arlen    = vif.monitor_cb.arlen;
                 tr.arsize   = vif.monitor_cb.arsize;
@@ -146,15 +180,32 @@ class axi_monitor #(int VIF_ID_WIDTH = ID_WIDTH) extends uvm_monitor;
                 if(read_trans_queue.size() > 0) begin
                     current_id = vif.monitor_cb.rid;
                     //sreach correct via ID and flag
-                    q_index = read_trans_queue.find_index() with (
-                        item.arid == current_id && !item.rbeat_finish
-                    );
+                    if (IS_DOWNSTREAM) begin
+                        q_index = read_trans_queue.find_index() with (
+                            item.m_arid == current_id && !item.rbeat_finish
+                        );
+                    end
+                    else begin
+                        q_index = read_trans_queue.find_index() with (
+                            item.arid == current_id[ID_WIDTH-1:0] && !item.rbeat_finish
+                        );
+                    end
                     //this loop focus on tr
                     if(q_index.size() > 0) begin
                         int idx = q_index[0];
                         temp_tr = read_trans_queue[idx];
                         //this loop focus on every single beat
                         if(temp_tr.current_rbeat_count <= temp_tr.arlen) begin
+
+                            if (IS_DOWNSTREAM) begin
+                                temp_tr.m_rid = vif.monitor_cb.rid;
+                                temp_tr.rid   = vif.monitor_cb.rid[ID_WIDTH-1:0];
+                            end
+                            else begin
+                                temp_tr.rid   = vif.monitor_cb.rid;
+                                temp_tr.m_rid = '0;
+                            end
+                            
                             temp_tr.rdata[temp_tr.current_rbeat_count] = vif.monitor_cb.rdata;
                             temp_tr.rresp[temp_tr.current_rbeat_count] = vif.monitor_cb.rresp;
                             temp_tr.current_rbeat_count++;

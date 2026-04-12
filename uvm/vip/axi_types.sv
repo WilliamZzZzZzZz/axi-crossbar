@@ -4,7 +4,8 @@
     localparam int DATA_WIDTH    = 32;
     localparam int ADDR_WIDTH    = 32;
     localparam int ID_WIDTH      = 8;
-    localparam int M_ID_WIDTH    = ID_WIDTH + 1;
+    localparam int S_COUNT       = 2;
+    localparam int M_ID_WIDTH    = ID_WIDTH + $clog2(S_COUNT);
     localparam int STRB_WIDTH    = (DATA_WIDTH/8);
     localparam int QOS_WIDTH     = 4;
     localparam int REGION_WIDTH  = 4;

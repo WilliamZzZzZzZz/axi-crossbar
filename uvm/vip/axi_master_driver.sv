@@ -4,8 +4,8 @@
 class axi_master_driver extends uvm_driver#(axi_transaction);
     `uvm_component_utils(axi_master_driver)
 
-    axi_configuration cfg;
-    virtual axi_if vif;
+    axi_configuration                       cfg;
+    virtual axi_if#(.ID_WIDTH(ID_WIDTH))    vif;
 
     axi_master_write_driver    write_drv;
     axi_master_read_driver     read_drv;

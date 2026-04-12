@@ -4,8 +4,8 @@
 class axi_master_sequencer extends uvm_sequencer #(axi_transaction);
     `uvm_component_utils(axi_master_sequencer)
 
-    axi_configuration cfg;
-    virtual axi_if vif;
+    axi_configuration                       cfg;
+    virtual axi_if#(.ID_WIDTH(ID_WIDTH))    vif;
 
     function new(string name = "axi_master_sequencer", uvm_component parent = null);
         super.new(name, parent);
