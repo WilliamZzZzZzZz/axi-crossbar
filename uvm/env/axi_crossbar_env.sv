@@ -9,9 +9,9 @@ class axi_crossbar_env extends uvm_env;
     axi_master_agent            mst_agent01;
     axi_slave_agent             slv_agent00;
     axi_slave_agent             slv_agent01;
-    axiram_virtual_sequencer    virt_sqr;
-    axiram_scoreboard           scb;
-    axiram_coverage             cov;
+    axicb_virtual_sequencer     virt_sqr;
+    axicb_scoreboard           scb;
+    axicb_coverage              cov;
 
     function new(string name = "axi_crossbar_env", uvm_component parent = null);
         super.new(name, parent);
@@ -31,9 +31,9 @@ class axi_crossbar_env extends uvm_env;
         slv_agent00 = axi_slave_agent::type_id::create("slv_agent00", this);
         slv_agent01 = axi_slave_agent::type_id::create("slv_agent01", this);
         
-        virt_sqr = axiram_virtual_sequencer::type_id::create("virt_sqr", this);
-        scb = axiram_scoreboard::type_id::create("scb", this);
-        cov = axiram_coverage::type_id::create("cov", this);
+        virt_sqr = axicb_virtual_sequencer::type_id::create("virt_sqr", this);
+        scb = axicb_scoreboard::type_id::create("scb", this);
+        cov = axicb_coverage::type_id::create("cov", this);
     endfunction
 
     virtual function void connect_phase(uvm_phase phase);

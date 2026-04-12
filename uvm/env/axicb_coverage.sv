@@ -1,8 +1,8 @@
-`ifndef AXIRAM_COVERAGE_SV
-`define AXIRAM_COVERAGE_SV
+`ifndef AXICB_COVERAGE_SV
+`define AXICB_COVERAGE_SV
 
-class axiram_coverage extends uvm_subscriber #(axi_transaction);
-    `uvm_component_utils(axiram_coverage)
+class axicb_coverage extends uvm_subscriber #(axi_transaction);
+    `uvm_component_utils(axicb_coverage)
 
     trans_type_enum trans_type;
     burst_len_enum  burst_len;
@@ -11,7 +11,7 @@ class axiram_coverage extends uvm_subscriber #(axi_transaction);
     bit [15:0]      addr;
     bit [3:0]       wstrb;
 
-    function new(string name  = "axiram_coverage", uvm_component parent = null);
+    function new(string name  = "axicb_coverage", uvm_component parent = null);
         super.new(name, parent);
         //TODO new every covergroup below
         cg_trans_type = new();

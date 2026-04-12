@@ -3,7 +3,7 @@ module axi_crossbar_tb;
     import uvm_pkg::*;
     `include "uvm_macros.svh"
     import axi_pkg::*;
-    import axiram_pkg::*;
+    import axicb_pkg::*;
 
     localparam int AXI_DATA_WIDTH   = 32;
     localparam int AXI_ADDR_WIDTH   = 32;

@@ -1,9 +1,9 @@
-`ifndef AXIRAM_SCOREBOARD_SV
-`define AXIRAM_SCOREBOARD_SV
+`ifndef AXICB_SCOREBOARD_SV
+`define AXICB_SCOREBOARD_SV
 
-class axiram_scoreboard extends uvm_subscriber #(axi_transaction);
+class axicb_scoreboard extends uvm_subscriber #(axi_transaction);
 
-    `uvm_component_utils(axiram_scoreboard)
+    `uvm_component_utils(axicb_scoreboard)
     
     //print in the report_phase 
     int unsigned check_count;   //total beats compared
@@ -13,7 +13,7 @@ class axiram_scoreboard extends uvm_subscriber #(axi_transaction);
     //only be write-in data's address occupy memory
     bit [31:0] ref_mem[bit [15:0]];
 
-    function new(string name = "axiram_scoreboard", uvm_component parent = null);
+    function new(string name = "axicb_scoreboard", uvm_component parent = null);
         super.new(name, parent);
     endfunction
 
