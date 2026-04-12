@@ -9,6 +9,8 @@ class axi_configuration extends uvm_object;
     int strb_width = 4;
     int addr_width = 32;
 
+    int handshake_timeout_cycles = 2000;
+
     function new(string name = "axi_configuration");
         super.new(name);
     endfunction

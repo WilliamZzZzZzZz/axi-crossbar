@@ -4,15 +4,23 @@
 class axi_master_single_sequence extends axi_base_sequence;
     `uvm_object_utils(axi_master_single_sequence)
 
-    rand bit [15:0] addr;
-    rand bit [31:0] data;
+    rand bit [ADDR_WIDTH - 1:0] addr;
+    rand bit [DATA_WIDTH - 1:0] data;
     rand trans_type_enum trans_type;
     rand burst_len_enum burst_len;
     rand burst_type_enum burst_type;
     rand burst_size_enum burst_size = BURST_SIZE_4BYTES;
 
-    bit [31:0] every_beat_data[];   //store every beat's data
-    bit [3:0] every_beat_wstrb[];
+    //tr_varibles are only use for tranasction's transfermation
+    //no present any real signals
+    rand bit [ID_WIDTH - 1:0]       tr_id = '0;
+    rand bit [QOS_WIDTH - 1:0]      tr_qos = '0;
+    rand bit [REGION_WIDTH - 1:0]   tr_region = '0;
+    rand bit [AWUSER_WIDTH - 1:0]   tr_awuser = '0;
+    rand bit [ARUSER_WIDTH - 1:0]   tr_aruser = '0;
+
+    bit [DATA_WIDTH - 1:0] every_beat_data[];   //store every beat's data
+    bit [STRB_WIDTH - 1:0] every_beat_wstrb[];
 
     //control sequence whether blocking wait for driver's response
     //default-mode:  1(blocking)
@@ -56,7 +64,7 @@ class axi_master_single_sequence extends axi_base_sequence;
 
         if(!req.randomize() with {
             trans_type      == WRITE;
-            awid            == 0;                  //smoke test only
+            awid            == local::tr_id;                  //smoke test only
             awaddr          == local::addr;
             awlen           == local::burst_len;
             awsize          == local::burst_size;
@@ -64,6 +72,9 @@ class axi_master_single_sequence extends axi_base_sequence;
             awlock          == NORMAL;
             awcache         == NONBUFFER;
             awprot          == NPRI_SEC_DATA;
+            awqos           == local::tr_qos;
+            awregion        == local::tr_region;
+            awuser          == local::tr_awuser;
             wdata.size()    == local::actual_beats;
             wstrb.size()    == local::actual_beats;            
         }) begin
@@ -103,7 +114,7 @@ class axi_master_single_sequence extends axi_base_sequence;
 
         if(!req.randomize() with {
             trans_type  == READ;
-            arid        == 0;
+            arid        == local::tr_id;
             araddr      == local::addr;
             arlen       == local::burst_len;
             arsize      == local::burst_size;
@@ -111,6 +122,9 @@ class axi_master_single_sequence extends axi_base_sequence;
             arlock      == NORMAL;
             arcache     == NONBUFFER;
             arprot      == NPRI_SEC_DATA;
+            arqos       == local::tr_qos;
+            arregion    == local::tr_region;
+            aruser      == local::tr_aruser;
         }) begin
             `uvm_fatal(get_type_name(), "randomize failed in vip-write-transaction")
         end

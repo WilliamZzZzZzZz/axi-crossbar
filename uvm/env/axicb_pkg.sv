@@ -11,8 +11,8 @@ package axicb_pkg;
     `include "axicb_scoreboard.sv"
     `include "axicb_coverage.sv"
     `include "axi_crossbar_env.sv"
-    `include "axiram_virt_seq_lib.svh"
-    `include "axiram_tests_lib.svh"
+    `include "axicb_virt_seq_lib.svh"
+    `include "axicb_tests_lib.svh"
     
 
 endpackage

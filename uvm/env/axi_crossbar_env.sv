@@ -10,7 +10,7 @@ class axi_crossbar_env extends uvm_env;
     axi_slave_agent             slv_agent00;
     axi_slave_agent             slv_agent01;
     axicb_virtual_sequencer     virt_sqr;
-    axicb_scoreboard           scb;
+    axicb_scoreboard            scb;
     axicb_coverage              cov;
 
     function new(string name = "axi_crossbar_env", uvm_component parent = null);

@@ -1,27 +1,39 @@
-`ifndef AXIRAM_BASE_VIRTUAL_SEQUENCE_SV
-`define AXIRAM_BASE_VIRTUAL_SEQUENCE_SV
+`ifndef AXICB_BASE_VIRTUAL_SEQUENCE_SV
+`define AXICB_BASE_VIRTUAL_SEQUENCE_SV
 
-class axiram_base_virtual_sequence extends uvm_sequence;
+class axicb_base_virtual_sequence extends uvm_sequence;
+    `uvm_object_utils(axicb_base_virtual_sequence)
 
-    virtual axi_if vif;
+    
     bit [31:0] wr_val[]; 
     bit [31:0] rd_val[];
 
-    axiram_single_write_sequence single_write;
-    axiram_single_read_sequence single_read;
+    axicb_single_write_sequence single_write;
+    axicb_single_read_sequence single_read;
 
-    `uvm_object_utils(axiram_base_virtual_sequence)
-    `uvm_declare_p_sequencer(axiram_virtual_sequencer)
+    virtual axi_if#(.ID_WIDTH(ID_WIDTH)) vif_mst00;
+    virtual axi_if#(.ID_WIDTH(ID_WIDTH)) vif_mst01;
+    virtual axi_if#(.ID_WIDTH(ID_WIDTH)) vif;       //default
 
-    function new(string name = "axiram_base_virtual_sequence");
+    `uvm_declare_p_sequencer(axicb_virtual_sequencer)
+
+    function new(string name = "axicb_base_virtual_sequence");
         super.new(name);
     endfunction
 
     virtual task body();
         `uvm_info(get_type_name(), "entering...", UVM_LOW)
-        
-        if(!uvm_config_db#(virtual axi_if)::get(p_sequencer, "", "vif", vif))
-            `uvm_fatal(get_type_name(), "Failed to get vif from config_db in virtual sequence")
+
+        if(p_sequencer == null)
+            `uvm_fatal(get_type_name(), "p_sequencer is null")
+        if(p_sequencer.axi_mst_sqr00 == null || p_sequencer.axi_mst_sqr01 == null)
+            `uvm_fatal(get_type_name(), "master sequencer handles are null in virtual sequencer")
+
+        vif_mst00 = p_sequencer.axi_mst_sqr00.vif;
+        vif_mst01 = p_sequencer.axi_mst_sqr01.vif;
+        vif       = vif_mst00;                      //default
+        if(vif_mst00 == null || vif_mst01 == null)
+            `uvm_fatal(get_type_name(), "failed to get vif from master sequencers")
 
         `uvm_info(get_type_name(), "exiting...", UVM_LOW)
     endtask

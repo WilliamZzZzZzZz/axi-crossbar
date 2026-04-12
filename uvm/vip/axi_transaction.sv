@@ -45,7 +45,7 @@ class axi_transaction extends uvm_sequence_item;
     rand prot_type_enum             awprot;    // protection type(bit[0]-privileged, bit[1]-secure, bit[2]-instruction)
     rand bit [QOS_WIDTH - 1:0]      awqos;
     rand bit [REGION_WIDTH - 1:0]   awregion;
-    rand bit [AWUSER_WIDTH - 1:0]    awuser;
+    rand bit [AWUSER_WIDTH - 1:0]   awuser;
 
     //W
     rand bit [DATA_WIDTH - 1:0]     wdata[];   // write data

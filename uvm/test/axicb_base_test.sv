@@ -1,18 +1,18 @@
-`ifndef AXIRAM_BASE_TEST_SV
-`define AXIRAM_BASE_TEST_SV
+`ifndef AXICB_BASE_TEST_SV
+`define AXICB_BASE_TEST_SV
 
-class axiram_base_test extends uvm_test;
+class axicb_base_test extends uvm_test;
 
-    `uvm_component_utils(axiram_base_test)
-    axiram_env env;
+    `uvm_component_utils(axicb_base_test)
+    axi_crossbar_env env;
 
-    function new(string name = "axiram_base_test", uvm_component parent = null);
+    function new(string name = "axicb_base_test", uvm_component parent = null);
         super.new(name, parent);
     endfunction
 
     function void build_phase(uvm_phase phase);
         super.build_phase(phase);
-        env = axiram_env::type_id::create("env", this);
+        env = axi_crossbar_env::type_id::create("env", this);
     endfunction
 
     function void connect_phase(uvm_phase phase);

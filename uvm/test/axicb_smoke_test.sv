@@ -1,11 +1,11 @@
-`ifndef AXIRAM_SMOKE_TEST_SV
-`define AXIRAM_SMOKE_TEST_SV
+`ifndef AXICB_SMOKE_TEST_SV
+`define AXICB_SMOKE_TEST_SV
 
-class axiram_smoke_test extends axiram_base_test;
+class axicb_smoke_test extends axiram_base_test;
 
-    `uvm_component_utils(axiram_smoke_test)
+    `uvm_component_utils(axicb_smoke_test)
 
-    function new(string name = "axiram_smoke_test", uvm_component parent);
+    function new(string name = "axicb_smoke_test", uvm_component parent);
         super.new(name, parent);
     endfunction
 
@@ -14,7 +14,7 @@ class axiram_smoke_test extends axiram_base_test;
     endfunction
 
     task run_phase(uvm_phase phase);
-        axiram_smoke_virtual_sequence seq = axiram_smoke_virtual_sequence::type_id::create("seq");
+        axicb_smoke_virtual_sequence seq = axiram_smoke_virtual_sequence::type_id::create("seq");
         super.run_phase(phase);
 
         phase.raise_objection(this);

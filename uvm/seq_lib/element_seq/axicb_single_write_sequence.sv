@@ -1,9 +1,9 @@
-`ifndef AXIRAM_SINGLE_WRITE_SEQUENCE_SV
-`define AXIRAM_SINGLE_WRITE_SEQUENCE_SV
+`ifndef AXICB_SINGLE_WRITE_SEQUENCE_SV
+`define AXICB_SINGLE_WRITE_SEQUENCE_SV
 
-class axiram_single_write_sequence extends axiram_base_sequence;
+class axicb_single_write_sequence extends axiram_base_sequence;
 
-    `uvm_object_utils(axiram_single_write_sequence)
+    `uvm_object_utils(axicb_single_write_sequence)
 
     rand bit [31:0] addr;
     rand bit [31:0] data;
@@ -16,12 +16,14 @@ class axiram_single_write_sequence extends axiram_base_sequence;
 
     bit wait_for_response = 1;
 
-    function new(string name = "axiram_single_write_sequence");
+    function new(string name = "axicb_single_write_sequence");
         super.new(name);
     endfunction
 
     virtual task body();
         axi_master_single_sequence axi_single;
+        axi_master_sequencer       target_sqr;
+
         `uvm_info(get_type_name(), "entering...", UVM_LOW)
 
         axi_single = axi_master_single_sequence::type_id::create("axi_single");
@@ -35,7 +37,8 @@ class axiram_single_write_sequence extends axiram_base_sequence;
         axi_single.every_beat_wstrb = every_beat_wstrb;
         axi_single.wait_for_response= wait_for_response;
 
-        axi_single.start(p_sequencer.axi_mst_sqr);
+        target_sqr = p_sequencer.get_master_sqr(0);     //'0' means send tr to slave00 port
+        axi_single.start(target_sqr);
 
         `uvm_info(get_type_name(), "exiting...", UVM_LOW)
     endtask
