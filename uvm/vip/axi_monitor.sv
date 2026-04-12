@@ -101,12 +101,13 @@ class axi_monitor #(int VIF_ID_WIDTH = ID_WIDTH, bit IS_DOWNSTREAM = 0) extends 
                 //search for correct tr's index in queue
                 if(IS_DOWNSTREAM) begin
                     q_index = write_trans_queue.find_index() with (
-                        item.awid == current_id && item.wbeat_finish && !item.b_finish
+                        item.m_awid == current_id && item.wbeat_finish && !item.b_finish
                     );
                 end
                 else begin
                     q_index = write_trans_queue.find_index() with (
-                        item.awid == current_id[ID_WIDTH - 1:0] && item.wbeat_finish && !item.b_finish                    
+                        item.awid == current_id[ID_WIDTH - 1:0] && item.wbeat_finish && !item.b_finish
+                    );                    
                 end
 
                 if(q_index.size() > 0) begin
@@ -139,7 +140,7 @@ class axi_monitor #(int VIF_ID_WIDTH = ID_WIDTH, bit IS_DOWNSTREAM = 0) extends 
 
     virtual task monitor_read_transaction();
         axi_transaction tr, temp_tr;
-        bit [M_ID_WIDTH - 1:0] current_id;
+        bit [VIF_ID_WIDTH - 1:0] current_id;
         int q_index[$];
         forever begin
             @(posedge vif.aclk)

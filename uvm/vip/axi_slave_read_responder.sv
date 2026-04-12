@@ -39,7 +39,7 @@ class axi_slave_read_responder extends uvm_object;
             end while(vif.slave_cb.arvalid === 1'b0);
             //handshake success
             tr.m_arid   = vif.slave_cb.arid;
-            tr.arid     = vif.slave_cb.arid[ID_WIDTH - 1:0]
+            tr.arid     = vif.slave_cb.arid[ID_WIDTH - 1:0];
             tr.araddr   = vif.slave_cb.araddr;
             tr.arlen    = vif.slave_cb.arlen;
             tr.arsize   = vif.slave_cb.arsize;
