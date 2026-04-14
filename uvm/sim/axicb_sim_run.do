@@ -5,5 +5,5 @@ if {[info command guiIsActive] == ""} {
 } else {
   echo "GUI mode"
   dump -add / -depth 0
-  do ./axiram_debug_wave.do
+  do ./axicb_debug_wave.do
 }

@@ -120,6 +120,6 @@ killdve:
 	@echo "Killing all DVE processes..."
 	-pkill -f dve
 
-KEEP_FILES = Makefile axiram_debug_wave.do axiram_sim_run.do
+KEEP_FILES = Makefile axicb_debug_wave.do axicb_sim_run.do
 clean:
 	find . -maxdepth 1 ! -name '.' $(foreach f,$(KEEP_FILES),! -name '$(f)') -exec rm -rf {} +
