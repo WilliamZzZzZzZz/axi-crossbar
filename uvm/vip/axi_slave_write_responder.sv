@@ -86,8 +86,8 @@ class axi_slave_write_responder extends uvm_object;
             //deal with every single beat 
             for(i = 0; i < beat_num; i++) begin
                 do begin
-                    @(vif.slave_cb)
-                end while(vif.slave_cb.wvalid === 1'b0)
+                    @(vif.slave_cb);
+                end while(vif.slave_cb.wvalid === 1'b0);
                 //handshake success
 
                 //sample every beat data and strb into tr
@@ -139,7 +139,7 @@ class axi_slave_write_responder extends uvm_object;
             beat_num = int'(tr.awlen) + 1;
 
             //deal with every single beat
-            for(int i; i < beat_num; i++) begin
+            for(int i = 0; i < beat_num; i++) begin
                 //got every beat's actual addr
                 beat_addr = axi_slave_mem::calc_beat_addr(
                     tr.awaddr,

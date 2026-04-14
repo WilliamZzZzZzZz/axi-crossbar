@@ -1,7 +1,7 @@
 `ifndef AXICB_SINGLE_WRITE_SEQUENCE_SV
 `define AXICB_SINGLE_WRITE_SEQUENCE_SV
 
-class axicb_single_write_sequence extends axiram_base_sequence;
+class axicb_single_write_sequence extends axicb_base_sequence;
 
     `uvm_object_utils(axicb_single_write_sequence)
 

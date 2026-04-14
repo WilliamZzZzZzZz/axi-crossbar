@@ -1,7 +1,7 @@
 `ifndef AXICB_SINGLE_READ_SEQUENCE_SV
 `define AXICB_SINGLE_READ_SEQUENCE_SV
 
-class axicb_single_read_sequence extends axiram_base_sequence;
+class axicb_single_read_sequence extends axicb_base_sequence;
 
     `uvm_object_utils(axicb_single_read_sequence)
 
@@ -33,7 +33,7 @@ class axicb_single_read_sequence extends axiram_base_sequence;
     axi_single.wait_for_response = wait_for_response;
 
     target_sqr = p_sequencer.get_master_sqr(0);     //'0' means send tr to slave00 port
-    axi_single.start(p_sequencer.axi_mst_sqr);
+    axi_single.start(target_sqr);
 
     if(wait_for_response) begin
         every_beat_data = axi_single.every_beat_data;

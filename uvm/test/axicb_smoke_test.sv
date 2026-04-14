@@ -1,7 +1,7 @@
 `ifndef AXICB_SMOKE_TEST_SV
 `define AXICB_SMOKE_TEST_SV
 
-class axicb_smoke_test extends axiram_base_test;
+class axicb_smoke_test extends axicb_base_test;
 
     `uvm_component_utils(axicb_smoke_test)
 
@@ -14,7 +14,7 @@ class axicb_smoke_test extends axiram_base_test;
     endfunction
 
     task run_phase(uvm_phase phase);
-        axicb_smoke_virtual_sequence seq = axiram_smoke_virtual_sequence::type_id::create("seq");
+        axicb_smoke_virtual_sequence seq = axicb_smoke_virtual_sequence::type_id::create("seq");
         super.run_phase(phase);
 
         phase.raise_objection(this);
