@@ -9,6 +9,7 @@ DOTCL    ?= 1
 VERB     ?= UVM_HIGH
 OUT      ?= out
 TESTNAME ?= axicb_smoke_test
+RUN_LOG  ?= $(OUT)/log/run.log
 
 DFILES   := $(sort $(wildcard ../../dut/*.v))
 VFILES   := ../vip/axi_pkg.sv \
@@ -20,6 +21,19 @@ VFILES   := ../vip/axi_pkg.sv \
 # "make run T=smoke GUI=1 &" expands to TESTNAME=axicb_smoke_test
 ifdef T
 TESTNAME = axicb_$(T)_test
+endif
+
+# Support both:
+#   make checkinfo CLASS=axicb_smoke_virtual_sequence
+#   make checkinfo axicb_smoke_virtual_sequence
+ifeq ($(firstword $(MAKECMDGOALS)),checkinfo)
+ifneq ($(word 2,$(MAKECMDGOALS)),)
+CLASS := $(word 2,$(MAKECMDGOALS))
+CHECKINFO_EXTRA_GOALS := $(wordlist 2,$(words $(MAKECMDGOALS)),$(MAKECMDGOALS))
+.PHONY: $(CHECKINFO_EXTRA_GOALS)
+$(CHECKINFO_EXTRA_GOALS):
+	@:
+endif
 endif
 
 
@@ -36,11 +50,11 @@ VCOMP_INC = +incdir+../../dut \
             +incdir+../testbench
 VCOMP    = vlogan -full64 -ntb_opts uvm-1.2 -sverilog -timescale=1ps/1ps -nc -l $(OUT)/log/comp.log $(VCOMP_INC)
 ELAB     = vcs -full64 -ntb_opts uvm-1.2 -debug_acc+all -l $(OUT)/log/elab.log -sim_res=1ps -LDFLAGS -Wl,--no-as-needed
-RUN      = $(OUT)/obj/$(TB).simv -l $(OUT)/log/run.log -sml +ntb_random_seed=$(SEED) +UVM_TESTNAME=$(TESTNAME) +UVM_VERBOSITY=$(VERB) -cm_dir $(CM_DIR) -cm_name $(CM_NAME)
+RUN      = $(OUT)/obj/$(TB).simv -l $(RUN_LOG) -sml +ntb_random_seed=$(SEED) +UVM_TESTNAME=$(TESTNAME) +UVM_VERBOSITY=$(VERB) -cm_dir $(CM_DIR) -cm_name $(CM_NAME)
 COV_OPTS = -full64 -dir $(CM_DIR)
 CM_DIR  ?= $(OUT)/cov.vdb
 CM_NAME ?= $(TESTNAME)_$(SEED)
-SIMRUNFILE = axiram_sim_run.do
+SIMRUNFILE = axicb_sim_run.do
 
 ifeq ($(GUI),1)
 RUN += -gui
@@ -116,6 +130,21 @@ htmlcov:
 #############################
 # Utility targets
 #############################
+checkinfo:
+	@if [ -z "$(strip $(CLASS))" ]; then \
+		echo "Usage: make checkinfo CLASS=<uvm_type_name>"; \
+		echo "   or: make checkinfo <uvm_type_name>"; \
+		exit 1; \
+	fi
+	@if [ ! -f "$(RUN_LOG)" ]; then \
+		echo "Log file not found: $(RUN_LOG)"; \
+		echo "Run a simulation first, for example: make smoke"; \
+		exit 1; \
+	fi
+	@echo "Filtering UVM_INFO for [$(CLASS)] from $(RUN_LOG)"
+	@grep -n -E '^UVM_INFO .*\[$(CLASS)\]' "$(RUN_LOG)" || \
+	{ echo "No UVM_INFO lines found for [$(CLASS)] in $(RUN_LOG)"; exit 1; }
+
 killdve:
 	@echo "Killing all DVE processes..."
 	-pkill -f dve

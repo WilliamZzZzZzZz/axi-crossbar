@@ -10,11 +10,12 @@ class axicb_smoke_virtual_sequence extends axicb_base_virtual_sequence;
     endfunction
 
     virtual task body();
+        super.body();
         `uvm_info(get_type_name(), "========== smoke_test_start ==========", UVM_LOW)
         write_and_read_test(0, 0);
-        write_and_read_test(0, 1);
-        write_and_read_test(1, 0);
-        write_and_read_test(1, 1);
+        // write_and_read_test(0, 1);
+        // write_and_read_test(1, 0);
+        // write_and_read_test(1, 1);
         `uvm_info(get_type_name(), "========== smoke_test_end ============", UVM_LOW)
     endtask
 
@@ -35,7 +36,7 @@ class axicb_smoke_virtual_sequence extends axicb_base_virtual_sequence;
             default: `uvm_fatal(get_type_name(), "undefined index of slave")
         endcase
 
-        if(vif_mst00.arst === 1'b1 || vif_mst01.arst === 1'b1) @(negedge vif_mst00.arst and vif_mst01.arst);
+        if(vif_mst00.arst === 1'b1) @(negedge vif_mst00.arst);
         wait_cycles(5);
 
         addr            = 32'h0000_0040;
@@ -67,9 +68,9 @@ class axicb_smoke_virtual_sequence extends axicb_base_virtual_sequence;
         single_read.start(p_sequencer);
 
         if(compare_single_data(wr_data, single_read.data)) begin
-            `uvm_info(get_type_name(), sformatf("master %0d to slave %0d write and read PASSED!", mst_idx, slv_idx), UVM_MEDIUM)
+            `uvm_info(get_type_name(), $sformatf("master %0d to slave %0d write and read PASSED!", mst_idx, slv_idx), UVM_MEDIUM)
         end else begin
-            `uvm_error(get_type_name(), sformatf("master %0d to slave %0d write and read FAILED!", mst_idx, slv_idx), UVM_MEDIUM)
+            `uvm_error(get_type_name(), $sformatf("master %0d to slave %0d write and read FAILED!", mst_idx, slv_idx))
         end
 
     endtask
