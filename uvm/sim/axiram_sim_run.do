@@ -1,7 +1,8 @@
-# GUI mode or Batch mode execution branch for different purpose
-if {[info command guiIsActive]==""} {
+# Batch mode: run to completion.
+# GUI mode: load a useful default wave layout for axi_crossbar_tb.
+if {[info command guiIsActive] == ""} {
   run
-} else { 
+} else {
   echo "GUI mode"
   dump -add / -depth 0
   do ./axiram_debug_wave.do
