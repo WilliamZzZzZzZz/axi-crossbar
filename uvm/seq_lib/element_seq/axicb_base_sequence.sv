@@ -7,8 +7,8 @@ class axicb_base_sequence extends uvm_sequence;
 
     `uvm_declare_p_sequencer(axicb_virtual_sequencer)
 
-    // rand int unsigned src_master_idx;
-    // constraint src_master_idx_c { src_master_idx inside {0, 1}; }
+    rand int unsigned src_master_idx;
+    constraint src_master_idx_c { src_master_idx inside {0, 1}; }
 
     function new(string name = "axicb_base_sequence");
         super.new(name);

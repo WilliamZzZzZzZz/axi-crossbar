@@ -38,10 +38,12 @@ class axicb_base_virtual_sequence extends uvm_sequence;
         `uvm_info(get_type_name(), "exiting...", UVM_LOW)
     endtask
 
-    virtual function void compare_single_data(bit[31:0] val1, bit[31:0] val2);
+    virtual function bit compare_single_data(bit[31:0] val1, bit[31:0] val2);
         if(val1 === val2)
+            return 1;
             `uvm_info("CMP-SUCCESS", $sformatf("val1 'h%0x === val2 'h%0x", val1, val2), UVM_LOW)
         else begin
+            return 0;
             `uvm_error("CMP-ERROR", $sformatf("val1 'h%0x === val2 'h%0x", val1, val2))
         end
     endfunction  

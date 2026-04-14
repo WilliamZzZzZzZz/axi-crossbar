@@ -37,7 +37,7 @@ class axicb_single_write_sequence extends axicb_base_sequence;
         axi_single.every_beat_wstrb = every_beat_wstrb;
         axi_single.wait_for_response= wait_for_response;
 
-        target_sqr = p_sequencer.get_master_sqr(0);     //'0' means send tr to slave00 port
+        target_sqr = p_sequencer.get_master_sqr(src_master_idx);     //'0' means send tr to slave00 port
         axi_single.start(target_sqr);
 
         `uvm_info(get_type_name(), "exiting...", UVM_LOW)
