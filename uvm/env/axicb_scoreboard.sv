@@ -18,10 +18,10 @@ class axicb_scoreboard extends uvm_subscriber #(axi_transaction);
     endfunction
 
     //automatically callback while monitor finish every single transaction
-    virtual function void write(axi_transaction tr);
-        case (tr.trans_type)
-            WRITE: process_write(tr);
-            READ:  process_read(tr);
+    virtual function void write(axi_transaction t);
+        case (t.trans_type)
+            WRITE: process_write(t);
+            READ:  process_read(t);
             default: `uvm_error(get_type_name(), "Unknown type!")
         endcase
     endfunction

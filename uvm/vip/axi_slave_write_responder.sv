@@ -45,12 +45,12 @@ class axi_slave_write_responder extends uvm_object;
             tr.m_awid     = vif.slave_cb.awid;
             tr.awid       = vif.slave_cb.awid[ID_WIDTH - 1:0];
             tr.awaddr     = vif.slave_cb.awaddr;
-            tr.awlen      = vif.slave_cb.awlen;
-            tr.awsize     = vif.slave_cb.awsize;
-            tr.awburst    = vif.slave_cb.awburst;
-            tr.awlock     = vif.slave_cb.awlock;
-            tr.awcache    = vif.slave_cb.awcache;
-            tr.awprot     = vif.slave_cb.awprot;
+            tr.awlen      = burst_len_enum'(vif.slave_cb.awlen);
+            tr.awsize     = burst_size_enum'(vif.slave_cb.awsize);
+            tr.awburst    = burst_type_enum'(vif.slave_cb.awburst);
+            tr.awlock     = lock_type_enum'(vif.slave_cb.awlock);
+            tr.awcache    = cache_type_enum'(vif.slave_cb.awcache);
+            tr.awprot     = prot_type_enum'(vif.slave_cb.awprot);
             tr.awqos      = vif.slave_cb.awqos;
             tr.awregion   = vif.slave_cb.awregion;
             tr.awuser     = vif.slave_cb.awuser;
@@ -141,7 +141,7 @@ class axi_slave_write_responder extends uvm_object;
             //deal with every single beat
             for(int i = 0; i < beat_num; i++) begin
                 //got every beat's actual addr
-                beat_addr = axi_slave_mem::calc_beat_addr(
+                beat_addr = axi_slave_mem#()::calc_beat_addr(
                     tr.awaddr,
                     tr.awburst,
                     tr.awsize,
@@ -174,7 +174,7 @@ class axi_slave_write_responder extends uvm_object;
 
             `uvm_info(get_type_name(), $sformatf(
                 "B drived response back: bid = 0x%0h bresp = %0b",
-                vif.slave_cb.bid, vif.slave_cb.bresp
+                tr.m_bid, 2'b00
             ), UVM_MEDIUM)
             //deassert signals after handshake
             vif.slave_cb.bvalid <= 1'b0;

@@ -19,19 +19,19 @@ class axicb_coverage extends uvm_subscriber #(axi_transaction);
     endfunction
 
     //automatically callback while monitor finish every single transaction
-    virtual function void write(axi_transaction tr);
-        trans_type = tr.trans_type;
-        if(tr.trans_type == WRITE) begin
-            addr        = tr.awaddr;
-            burst_len   = tr.awlen;
-            burst_size  = tr.awsize;
-            burst_type  = tr.awburst;
-            wstrb       = (tr.wstrb.size() > 0) ? tr.wstrb[0][3:0] : 4'hF;
+    virtual function void write(axi_transaction t);
+        trans_type = t.trans_type;
+        if(t.trans_type == WRITE) begin
+            addr        = t.awaddr;
+            burst_len   = t.awlen;
+            burst_size  = t.awsize;
+            burst_type  = t.awburst;
+            wstrb       = (t.wstrb.size() > 0) ? t.wstrb[0][3:0] : 4'hF;
         end else begin  //READ
-            addr        = tr.araddr;
-            burst_len   = tr.arlen;
-            burst_size  = tr.arsize;
-            burst_type  = tr.arburst;
+            addr        = t.araddr;
+            burst_len   = t.arlen;
+            burst_size  = t.arsize;
+            burst_type  = t.arburst;
             wstrb       = 4'h0;
         end
         //TODO sample every covergroup

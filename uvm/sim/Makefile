@@ -62,6 +62,7 @@ prepare:
 	mkdir -p $(OUT)/obj
 
 comp: prepare
+	vlogan -full64 -ntb_opts uvm-1.2 -sverilog -timescale=1ps/1ps -nc -l $(OUT)/log/comp_uvm.log
 	$(VCOMP) $(DFILES) $(VFILES)
 
 elab: comp

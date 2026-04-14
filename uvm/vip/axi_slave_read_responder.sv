@@ -41,12 +41,12 @@ class axi_slave_read_responder extends uvm_object;
             tr.m_arid   = vif.slave_cb.arid;
             tr.arid     = vif.slave_cb.arid[ID_WIDTH - 1:0];
             tr.araddr   = vif.slave_cb.araddr;
-            tr.arlen    = vif.slave_cb.arlen;
-            tr.arsize   = vif.slave_cb.arsize;
-            tr.arburst  = vif.slave_cb.arburst;
-            tr.arlock   = vif.slave_cb.arlock;
-            tr.arcache  = vif.slave_cb.arcache;
-            tr.arprot   = vif.slave_cb.arprot;
+            tr.arlen    = burst_len_enum'(vif.slave_cb.arlen);
+            tr.arsize   = burst_size_enum'(vif.slave_cb.arsize);
+            tr.arburst  = burst_type_enum'(vif.slave_cb.arburst);
+            tr.arlock   = lock_type_enum'(vif.slave_cb.arlock);
+            tr.arcache  = cache_type_enum'(vif.slave_cb.arcache);
+            tr.arprot   = prot_type_enum'(vif.slave_cb.arprot);
             tr.arqos    = vif.slave_cb.arqos;
             tr.arregion = vif.slave_cb.arregion;
             tr.aruser   = vif.slave_cb.aruser;
@@ -71,7 +71,7 @@ class axi_slave_read_responder extends uvm_object;
             //deal with every single beat
             for(int i = 0; i < beat_num; i++) begin
                 //got every beat's addr
-                beat_addr = axi_slave_mem::calc_beat_addr(
+                beat_addr = axi_slave_mem#()::calc_beat_addr(
                     tr.araddr,
                     tr.arburst,
                     tr.arsize,
