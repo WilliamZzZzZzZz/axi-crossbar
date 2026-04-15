@@ -13,7 +13,7 @@ class axicb_smoke_virtual_sequence extends axicb_base_virtual_sequence;
         super.body();
         `uvm_info(get_type_name(), "========== smoke_test_start ==========", UVM_LOW)
         write_and_read_test(0, 0);
-        // write_and_read_test(0, 1);
+        write_and_read_test(0, 1);
         // write_and_read_test(1, 0);
         // write_and_read_test(1, 1);
         `uvm_info(get_type_name(), "========== smoke_test_end ============", UVM_LOW)
@@ -48,7 +48,7 @@ class axicb_smoke_virtual_sequence extends axicb_base_virtual_sequence;
 
         single_write = axicb_single_write_sequence::type_id::create("single_write");
         single_write.src_master_idx     = mst_idx;
-        single_write.addr               = addr;
+        single_write.addr               = base_addr;
         single_write.data               = wr_data;
         single_write.burst_len          = BURST_LEN_SINGLE;
         single_write.burst_type         = INCR;
@@ -60,7 +60,7 @@ class axicb_smoke_virtual_sequence extends axicb_base_virtual_sequence;
 
         single_read = axicb_single_read_sequence::type_id::create("single_read");
         single_read.src_master_idx      = mst_idx;
-        single_read.addr                = addr;
+        single_read.addr                = base_addr;
         single_read.burst_len           = BURST_LEN_SINGLE;
         single_read.burst_type          = INCR;
         single_read.burst_size          = BURST_SIZE_4BYTES;

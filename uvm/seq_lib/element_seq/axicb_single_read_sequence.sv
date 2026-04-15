@@ -22,6 +22,7 @@ class axicb_single_read_sequence extends axicb_base_sequence;
     virtual task body();
         axi_master_single_sequence axi_single;
         axi_master_sequencer       target_sqr;
+        super.body();
         `uvm_info(get_type_name(), "entering...", UVM_LOW)
 
         axi_single = axi_master_single_sequence::type_id::create("axi_single");
