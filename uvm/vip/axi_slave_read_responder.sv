@@ -30,12 +30,21 @@ class axi_slave_read_responder extends uvm_object;
 
     virtual task accept_ar_channel();
         axi_transaction tr;
+        int timeout_cnt;
         forever begin
             tr = axi_transaction::type_id::create("tr");
-            //pull up valid and wait for handshake
+            //pull up ready and wait for handshake
             vif.slave_cb.arready <= 1'b1;
+            timeout_cnt = 0;
             do begin
                 @(vif.slave_cb);
+                //TIMEOUT_CHECK(slave allow to wait more time)
+                timeout_cnt++;
+                if(timeout_cnt >= cfg.handshake_timeout_cycles*5) begin
+                    `uvm_error(get_type_name(), $sformatf(
+                        "AR channel(slave) timeout %0d cycles.", timeout_cnt))
+                    timeout_cnt = 0;
+                end
             end while(vif.slave_cb.arvalid === 1'b0);
             //handshake success
             tr.m_arid   = vif.slave_cb.arid;
@@ -60,6 +69,7 @@ class axi_slave_read_responder extends uvm_object;
     virtual task drive_r_channel();
         axi_transaction tr;
         int beat_num;
+        int timeout_cnt;
         bit [ADDR_WIDTH - 1:0] beat_addr;
         bit [ADDR_WIDTH - 1:0] word_addr;
         bit [DATA_WIDTH - 1:0] word_data;
@@ -92,8 +102,17 @@ class axi_slave_read_responder extends uvm_object;
                 vif.slave_cb.ruser  <= tr.aruser;
                 vif.slave_cb.rvalid <= 1'b1;    //axi protocol: after drive all signals on bus, then pull up valid
 
+                timeout_cnt = 0;
                 do begin
                     @(vif.slave_cb);
+                    //TIMEOUT_CHECK
+                    timeout_cnt++;
+                    if(timeout_cnt >= cfg.handshake_timeout_cycles) begin
+                        `uvm_fatal(get_type_name(), $sformatf(
+                            "R channel(slave) timeout %0d cycles. beat=%0d/%0d rid=0x%08h",
+                            cfg.handshake_timeout_cycles, i, beat_num, tr.m_rid
+                        ))
+                    end
                 end while(vif.slave_cb.rready === 1'b0);
                 //handshake success
 

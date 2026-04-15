@@ -31,13 +31,23 @@ class axi_slave_write_responder extends uvm_object;
     endtask
 
     virtual task accept_aw_channel();
-        axi_transaction tr;    
+        axi_transaction tr;
+        int timeout_cnt;    
         forever begin
             tr = axi_transaction::type_id::create("tr");
             //pull up ready signal and wait for handshake
             vif.slave_cb.awready <= 1'b1;
+            timeout_cnt = 0;
             do begin
                 @(vif.slave_cb);
+                //TIMEOUT_CHECK (slave allow to wait more time, no fatal but error)
+                timeout_cnt++;
+                if(timeout_cnt >= cfg.handshake_timeout_cycles * 5) begin
+                    `uvm_error(get_type_name(),$sformatf(
+                        "AW channel(slave) idle %0d cycles. no awvalid received",
+                        timeout_cnt))
+                    timeout_cnt = 0;
+                end
             end while(vif.slave_cb.awvalid === 1'b0);
             //handshake success
 
@@ -71,6 +81,7 @@ class axi_slave_write_responder extends uvm_object;
         axi_transaction tr;
         int beat_num;
         int i = 0;
+        int timeout_cnt;
         forever begin
             aw2w_mbx.get(tr);
             beat_num = int'(tr.awlen) + 1;
@@ -85,8 +96,16 @@ class axi_slave_write_responder extends uvm_object;
 
             //deal with every single beat 
             for(i = 0; i < beat_num; i++) begin
+                timeout_cnt = 0;
                 do begin
                     @(vif.slave_cb);
+                    //TIMEOUT_CHECK
+                    timeout_cnt++;
+                    if(timeout_cnt >= cfg.handshake_timeout_cycles) begin
+                        `uvm_fatal(get_type_name(), $sformatf(
+                            "W channel(slave) timeout %0d cycles. bid=0x%08h",
+                            cfg.handshake_timeout_cycles, tr.m_bid))
+                    end
                 end while(vif.slave_cb.wvalid === 1'b0);
                 //handshake success
 

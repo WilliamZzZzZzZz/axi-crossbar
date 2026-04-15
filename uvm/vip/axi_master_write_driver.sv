@@ -38,6 +38,7 @@ class axi_master_write_driver extends uvm_object;
     //write address channel
     virtual task drive_aw_channel();
         axi_transaction tr;
+        int timeout_cnt;
         forever begin
             req_mbx.get(tr);    //get response from master driver
             aw2w_mbx.put(tr);   //copy tr to W and B channel
@@ -56,10 +57,19 @@ class axi_master_write_driver extends uvm_object;
             vif.master_cb.awprot    <= tr.awprot;
             vif.master_cb.awqos     <= tr.awqos;
             vif.master_cb.awregion  <= tr.awregion;
-            vif.master_cb.awuser    <= tr.awuser;            
+            vif.master_cb.awuser    <= tr.awuser;   
+
             //hanshake polling
+            timeout_cnt = 0;
             do begin
                 @(vif.master_cb);
+                //TIMEOUT_CHECK
+                timeout_cnt++;
+                if(timeout_cnt >= cfg.handshake_timeout_cycles) begin
+                    `uvm_fatal(get_type_name(), $sformatf(
+                        "AW handshake timeout after %0d cycles. awaddr=0x%08h, awid=0x%08h",
+                        cfg.handshake_timeout_cycles, tr.awaddr, tr.awid))
+                end
             end while(vif.master_cb.awready === 1'b0);
 
             //jump out DO loop means handshake success
@@ -75,6 +85,7 @@ class axi_master_write_driver extends uvm_object;
         axi_transaction tr;
         int beat_num;
         int i;
+        int timeout_cnt;
         forever begin
             aw2w_mbx.get(tr);
             beat_num = int'(tr.awlen) + 1;
@@ -91,6 +102,7 @@ class axi_master_write_driver extends uvm_object;
             forever begin
                 @(vif.master_cb);
                 if(vif.master_cb.wready === 1'b1) begin
+                    timeout_cnt = 0;
                     if(i >= beat_num) begin
                         vif.master_cb.wvalid <= 1'b0;
                         vif.master_cb.wlast  <= 1'b0;
@@ -100,6 +112,13 @@ class axi_master_write_driver extends uvm_object;
                         vif.master_cb.wstrb <= tr.wstrb[i];
                         vif.master_cb.wlast <= (i == beat_num - 1) ? 1'b1 : 1'b0;
                         i++;
+                    end
+                end else begin  //TIMEOUT_CHECK
+                    timeout_cnt++;
+                    if(timeout_cnt >= cfg.handshake_timeout_cycles) begin
+                        `uvm_fatal(get_type_name(), $sformatf(
+                            "W channel wready timeout after %0d cycles. beat=%0d/%0d addr=0x%08h",
+                            cfg.handshake_timeout_cycles, i, beat_num, tr.awaddr))
                     end
                 end
             end
