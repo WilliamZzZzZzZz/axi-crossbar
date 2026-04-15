@@ -4,6 +4,7 @@
 class axicb_virtual_sequencer extends uvm_sequencer;
     `uvm_component_utils(axicb_virtual_sequencer)
 
+    axi_configuration cfg;
     axi_master_sequencer axi_mst_sqr00;
     axi_master_sequencer axi_mst_sqr01;
 

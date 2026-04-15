@@ -38,7 +38,11 @@ class axicb_single_write_sequence extends axicb_base_sequence;
         axi_single.wait_for_response= wait_for_response;
 
         target_sqr = p_sequencer.get_master_sqr(src_master_idx);     //'0' means send tr to slave00 port
-        axi_single.start(target_sqr);
+        start_master_subsequence_or_timeout(
+            axi_single,
+            target_sqr,
+            $sformatf("axicb single write master%0d addr=0x%08h", src_master_idx, addr)
+        );
 
         `uvm_info(get_type_name(), "exiting...", UVM_LOW)
     endtask

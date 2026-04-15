@@ -17,6 +17,20 @@ class axi_slave_write_responder extends uvm_object;
         w2b_mbx = new();    
     endfunction
 
+    local function int unsigned get_handshake_timeout_cycles();
+        if(cfg != null && cfg.handshake_timeout_cycles > 0) begin
+            return cfg.handshake_timeout_cycles;
+        end
+        return 2000;
+    endfunction
+
+    local function void flush_mailboxes();
+        axi_transaction dummy;
+        while (aw2w_mbx.try_get(dummy));
+        while (w2b_mbx.try_get(dummy));
+        `uvm_info(get_type_name(), "RESET ENABLE, CLEAR SLAVE WRITE MAILBOXES", UVM_LOW)
+    endfunction
+
     virtual task run_write_channels();
         forever begin
             @(negedge vif.arst);
@@ -27,6 +41,7 @@ class axi_slave_write_responder extends uvm_object;
             join_none
             @(posedge vif.arst);
             disable fork;   //over reset, unfinished threads all should be killed
+            flush_mailboxes();
         end
     endtask
 
@@ -71,6 +86,7 @@ class axi_slave_write_responder extends uvm_object;
         axi_transaction tr;
         int beat_num;
         int i = 0;
+        int unsigned wait_cycles;
         forever begin
             aw2w_mbx.get(tr);
             beat_num = int'(tr.awlen) + 1;
@@ -85,9 +101,25 @@ class axi_slave_write_responder extends uvm_object;
 
             //deal with every single beat 
             for(i = 0; i < beat_num; i++) begin
+                wait_cycles = 0;
                 do begin
                     @(vif.slave_cb);
-                end while(vif.slave_cb.wvalid === 1'b0);
+                    if(vif.slave_cb.wvalid !== 1'b1) begin
+                        wait_cycles++;
+                        if(wait_cycles >= get_handshake_timeout_cycles()) begin
+                            vif.slave_cb.wready <= 1'b0;
+                            `uvm_error(get_type_name(), $sformatf(
+                                "SLAVE_W_VALID_TIMEOUT: wvalid did not assert on beat %0d/%0d for awaddr=0x%08h within %0d cycles",
+                                i, beat_num - 1, tr.awaddr, get_handshake_timeout_cycles()
+                            ))
+                            break;
+                        end
+                    end
+                end while(vif.slave_cb.wvalid !== 1'b1);
+
+                if(vif.slave_cb.wvalid !== 1'b1) begin
+                    break;
+                end
                 //handshake success
 
                 //sample every beat data and strb into tr
@@ -116,6 +148,10 @@ class axi_slave_write_responder extends uvm_object;
                     i, beat_num - 1, tr.wdata[i], tr.wstrb[i], vif.slave_cb.wlast
                 ), UVM_MEDIUM)
             end
+
+            if(tr.current_wbeat_count != beat_num) begin
+                continue;
+            end
             
             //after handshake, pull down ready
             vif.slave_cb.wready <= 1'b0;
@@ -133,6 +169,8 @@ class axi_slave_write_responder extends uvm_object;
         int beat_num;
         bit [ADDR_WIDTH - 1:0] beat_addr;
         bit [ADDR_WIDTH - 1:0] word_addr;
+        int unsigned wait_cycles;
+        bit timeout_hit;
 
         forever begin
             w2b_mbx.get(tr);
@@ -167,20 +205,36 @@ class axi_slave_write_responder extends uvm_object;
             vif.slave_cb.buser  <= tr.awuser;
             vif.slave_cb.bvalid <= 1'b1;      //pull up valid and wait for handshake
 
+            wait_cycles = 0;
+            timeout_hit = 0;
             do begin
                 @(vif.slave_cb);
-            end while(vif.slave_cb.bready === 1'b0);
-            //handshake success
+                if(vif.slave_cb.bready !== 1'b1) begin
+                    wait_cycles++;
+                    if(wait_cycles >= get_handshake_timeout_cycles()) begin
+                        timeout_hit = 1;
+                        `uvm_error(get_type_name(), $sformatf(
+                            "SLAVE_B_READY_TIMEOUT: bready did not assert for awaddr=0x%08h awid=0x%0h within %0d cycles",
+                            tr.awaddr, tr.awid, get_handshake_timeout_cycles()
+                        ))
+                        break;
+                    end
+                end
+            end while(vif.slave_cb.bready !== 1'b1);
+
+            vif.slave_cb.bvalid <= 1'b0;
+            vif.slave_cb.bid    <= '0;
+            vif.slave_cb.bresp  <= '0;
+            vif.slave_cb.buser  <= '0;
+
+            if(timeout_hit) begin
+                continue;
+            end
 
             `uvm_info(get_type_name(), $sformatf(
                 "B drived response back: bid = 0x%0h bresp = %0b",
                 tr.m_bid, 2'b00
             ), UVM_MEDIUM)
-            //deassert signals after handshake
-            vif.slave_cb.bvalid <= 1'b0;
-            vif.slave_cb.bid    <= '0;
-            vif.slave_cb.bresp  <= '0;
-            vif.slave_cb.buser  <= '0;
         end
     endtask
 

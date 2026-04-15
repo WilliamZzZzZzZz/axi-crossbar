@@ -50,6 +50,7 @@ class axi_master_single_sequence extends axi_base_sequence;
 
     virtual task do_write();
         int actual_beats = burst_len + 1;
+        string trans_tag = $sformatf("WRITE addr=0x%0h beats=%0d", addr, actual_beats);
 
         if(every_beat_data.size() != actual_beats) begin
             every_beat_data = new[actual_beats];
@@ -60,7 +61,7 @@ class axi_master_single_sequence extends axi_base_sequence;
         end
 
         req = axi_transaction::type_id::create("req");
-        start_item(req);
+        start_item_or_timeout(req, {trans_tag, " start_item"});
 
         if(!req.randomize() with {
             trans_type      == WRITE;
@@ -88,11 +89,18 @@ class axi_master_single_sequence extends axi_base_sequence;
         end
         
         req.response_requested = wait_for_response;
-        finish_item(req);
+        finish_item_or_timeout(req, {trans_tag, " finish_item"});
 
         //blocking
         if(wait_for_response) begin
-            get_response(rsp);
+            get_response_or_timeout(rsp, {trans_tag, " get_response"});
+
+            if(rsp.timed_out) begin
+                `uvm_error(get_type_name(), $sformatf(
+                    "%s timeout at %s: %s",
+                    trans_tag, rsp.timeout_stage, rsp.timeout_detail))
+                return;
+            end
 
             //id set 0 in smoke test, so no need to check id temporarily
             //check response
@@ -108,9 +116,10 @@ class axi_master_single_sequence extends axi_base_sequence;
 
     virtual task do_read();
         int actual_beats = burst_len + 1;
+        string trans_tag = $sformatf("READ addr=0x%0h beats=%0d", addr, actual_beats);
 
         req = axi_transaction::type_id::create("req");
-        start_item(req);
+        start_item_or_timeout(req, {trans_tag, " start_item"});
 
         if(!req.randomize() with {
             trans_type  == READ;
@@ -130,11 +139,18 @@ class axi_master_single_sequence extends axi_base_sequence;
         end
         
         req.response_requested = wait_for_response;
-        finish_item(req);
+        finish_item_or_timeout(req, {trans_tag, " finish_item"});
 
         //blocking
         if(wait_for_response) begin
-            get_response(rsp);
+            get_response_or_timeout(rsp, {trans_tag, " get_response"});
+
+            if(rsp.timed_out) begin
+                `uvm_error(get_type_name(), $sformatf(
+                    "%s timeout at %s: %s",
+                    trans_tag, rsp.timeout_stage, rsp.timeout_detail))
+                return;
+            end
 
             every_beat_data = new[actual_beats];
             foreach(every_beat_data[i]) begin

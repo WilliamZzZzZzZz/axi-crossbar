@@ -21,6 +21,7 @@ class axi_crossbar_env extends uvm_env;
         super.build_phase(phase);
 
         cfg = axi_configuration::type_id::create("cfg");
+        uvm_root::get().set_timeout(cfg.sim_timeout, 1);
         uvm_config_db#(axi_configuration)::set(this, "mst_agent00", "cfg", cfg);
         uvm_config_db#(axi_configuration)::set(this, "mst_agent01", "cfg", cfg);
         uvm_config_db#(axi_configuration)::set(this, "slv_agent00", "cfg", cfg);
@@ -39,6 +40,7 @@ class axi_crossbar_env extends uvm_env;
     virtual function void connect_phase(uvm_phase phase);
         super.connect_phase(phase);
 
+        virt_sqr.cfg = cfg;
         virt_sqr.axi_mst_sqr00 = mst_agent00.sequencer;
         virt_sqr.axi_mst_sqr01 = mst_agent01.sequencer;
         mst_agent00.item_collected_port.connect(scb.analysis_export);

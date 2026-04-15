@@ -16,6 +16,19 @@ class axi_slave_read_responder extends uvm_object;
         ar2r_mbx = new();
     endfunction
 
+    local function int unsigned get_handshake_timeout_cycles();
+        if(cfg != null && cfg.handshake_timeout_cycles > 0) begin
+            return cfg.handshake_timeout_cycles;
+        end
+        return 2000;
+    endfunction
+
+    local function void flush_mailboxes();
+        axi_transaction dummy;
+        while (ar2r_mbx.try_get(dummy));
+        `uvm_info(get_type_name(), "RESET ENABLE, CLEAR SLAVE READ MAILBOXES", UVM_LOW)
+    endfunction
+
     virtual task run_read_channels();
         forever begin
             @(negedge vif.arst);
@@ -25,6 +38,7 @@ class axi_slave_read_responder extends uvm_object;
             join_none
             @(posedge vif.arst);
             disable fork;   //over reset, unfinished threads all should be killed
+            flush_mailboxes();
         end
     endtask
 
@@ -63,6 +77,8 @@ class axi_slave_read_responder extends uvm_object;
         bit [ADDR_WIDTH - 1:0] beat_addr;
         bit [ADDR_WIDTH - 1:0] word_addr;
         bit [DATA_WIDTH - 1:0] word_data;
+        int unsigned wait_cycles;
+        bit timeout_hit;
 
         forever begin
             ar2r_mbx.get(tr);
@@ -92,9 +108,22 @@ class axi_slave_read_responder extends uvm_object;
                 vif.slave_cb.ruser  <= tr.aruser;
                 vif.slave_cb.rvalid <= 1'b1;    //axi protocol: after drive all signals on bus, then pull up valid
 
+                wait_cycles = 0;
+                timeout_hit = 0;
                 do begin
                     @(vif.slave_cb);
-                end while(vif.slave_cb.rready === 1'b0);
+                    if(vif.slave_cb.rready !== 1'b1) begin
+                        wait_cycles++;
+                        if(wait_cycles >= get_handshake_timeout_cycles()) begin
+                            timeout_hit = 1;
+                            `uvm_error(get_type_name(), $sformatf(
+                                "SLAVE_R_READY_TIMEOUT: rready did not assert for araddr=0x%08h beat %0d/%0d within %0d cycles",
+                                tr.araddr, i, beat_num - 1, get_handshake_timeout_cycles()
+                            ))
+                            break;
+                        end
+                    end
+                end while(vif.slave_cb.rready !== 1'b1);
                 //handshake success
 
                 @(vif.slave_cb);
@@ -104,6 +133,10 @@ class axi_slave_read_responder extends uvm_object;
                 vif.slave_cb.rlast  <= '0;
                 vif.slave_cb.ruser  <= '0;
                 vif.slave_cb.rvalid <= '0;
+
+                if(timeout_hit) begin
+                    break;
+                end
 
             end
         end

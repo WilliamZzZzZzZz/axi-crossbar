@@ -25,6 +25,7 @@ class axicb_smoke_virtual_sequence extends axicb_base_virtual_sequence;
         bit [31:0] wr_data_arr[];
         bit [3:0]  wr_strb_arr[];
         bit [31:0] addr_offset = 0, data_offset = 0;
+        virtual axi_if#(.ID_WIDTH(ID_WIDTH)) active_vif;
         
         case(slv_idx)
             0: begin
@@ -36,7 +37,10 @@ class axicb_smoke_virtual_sequence extends axicb_base_virtual_sequence;
             default: `uvm_fatal(get_type_name(), "undefined index of slave")
         endcase
 
-        if(vif_mst00.arst === 1'b1) @(negedge vif_mst00.arst);
+        active_vif = get_master_vif(mst_idx);
+
+        wait_reset_release_or_timeout(active_vif, $sformatf(
+            "smoke path master%0d->slave%0d wait reset release", mst_idx, slv_idx));
         wait_cycles(5);
 
         addr            = 32'h0000_0040;
@@ -56,7 +60,12 @@ class axicb_smoke_virtual_sequence extends axicb_base_virtual_sequence;
         single_write.every_beat_data    = wr_data_arr;
         single_write.every_beat_wstrb   = wr_strb_arr;
         single_write.wait_for_response  = 1;
-        single_write.start(p_sequencer);
+        start_subsequence_or_timeout(
+            single_write,
+            p_sequencer,
+            active_vif,
+            $sformatf("smoke write master%0d->slave%0d addr=0x%08h", mst_idx, slv_idx, base_addr)
+        );
 
         single_read = axicb_single_read_sequence::type_id::create("single_read");
         single_read.src_master_idx      = mst_idx;
@@ -65,7 +74,12 @@ class axicb_smoke_virtual_sequence extends axicb_base_virtual_sequence;
         single_read.burst_type          = INCR;
         single_read.burst_size          = BURST_SIZE_4BYTES;
         single_read.wait_for_response   = 1;
-        single_read.start(p_sequencer);
+        start_subsequence_or_timeout(
+            single_read,
+            p_sequencer,
+            active_vif,
+            $sformatf("smoke read master%0d->slave%0d addr=0x%08h", mst_idx, slv_idx, base_addr)
+        );
 
         if(compare_single_data(wr_data, single_read.data)) begin
             `uvm_info(get_type_name(), $sformatf("master %0d to slave %0d write and read PASSED!", mst_idx, slv_idx), UVM_MEDIUM)

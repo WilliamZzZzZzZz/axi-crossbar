@@ -7,6 +7,7 @@ class axicb_base_virtual_sequence extends uvm_sequence;
     
     bit [31:0] wr_val[]; 
     bit [31:0] rd_val[];
+    axi_configuration cfg;
 
     axicb_single_write_sequence single_write;
     axicb_single_read_sequence single_read;
@@ -32,8 +33,11 @@ class axicb_base_virtual_sequence extends uvm_sequence;
         vif_mst00 = p_sequencer.axi_mst_sqr00.vif;
         vif_mst01 = p_sequencer.axi_mst_sqr01.vif;
         vif       = vif_mst00;                      //default
+        cfg       = (p_sequencer.cfg != null) ? p_sequencer.cfg : p_sequencer.axi_mst_sqr00.cfg;
         if(vif_mst00 == null || vif_mst01 == null)
             `uvm_fatal(get_type_name(), "failed to get vif from master sequencers")
+        if(cfg == null)
+            `uvm_fatal(get_type_name(), "failed to get cfg from virtual/master sequencer")
 
         `uvm_info(get_type_name(), "exiting...", UVM_LOW)
     endtask
@@ -67,6 +71,101 @@ class axicb_base_virtual_sequence extends uvm_sequence;
 
     task wait_cycles(int n);
         repeat(n) @(posedge vif.aclk);
+    endtask
+
+    protected function int unsigned get_reset_timeout_cycles();
+        if(cfg != null && cfg.reset_deassert_timeout_cycles > 0) begin
+            return cfg.reset_deassert_timeout_cycles;
+        end
+        return 128;
+    endfunction
+
+    protected function int unsigned get_sequence_timeout_cycles();
+        if(cfg != null && cfg.sequence_timeout_cycles > 0) begin
+            return cfg.sequence_timeout_cycles;
+        end
+        return 4000;
+    endfunction
+
+    protected function virtual axi_if#(.ID_WIDTH(ID_WIDTH)) get_master_vif(int unsigned idx);
+        case(idx)
+            0: return vif_mst00;
+            1: return vif_mst01;
+            default: begin
+                `uvm_fatal(get_type_name(), $sformatf("invalid master index for vif lookup: %0d", idx))
+            end
+        endcase
+    endfunction
+
+    protected task wait_reset_release_or_timeout(
+        input virtual axi_if#(.ID_WIDTH(ID_WIDTH)) vif_handle,
+        input string timeout_context
+    );
+        bit released = 0;
+        int unsigned timeout_cycles;
+
+        if(vif_handle == null) begin
+            `uvm_fatal(get_type_name(), $sformatf(
+                "null vif while waiting reset release: %s", timeout_context))
+        end
+
+        timeout_cycles = get_reset_timeout_cycles();
+
+        fork
+            begin
+                if(vif_handle.arst === 1'b0) begin
+                    released = 1;
+                end
+                else begin
+                    @(negedge vif_handle.arst);
+                    released = 1;
+                end
+            end
+            begin
+                repeat(timeout_cycles) @(posedge vif_handle.aclk);
+            end
+        join_any
+        disable fork;
+
+        if(!released) begin
+            `uvm_fatal(get_type_name(), $sformatf(
+                "reset deassert timeout after %0d cycles: %s",
+                timeout_cycles, timeout_context))
+        end
+    endtask
+
+    protected task start_subsequence_or_timeout(
+        input uvm_sequence_base seq_h,
+        input uvm_sequencer_base sqr_h,
+        input virtual axi_if#(.ID_WIDTH(ID_WIDTH)) clk_vif,
+        input string timeout_context
+    );
+        bit seq_done = 0;
+        int unsigned timeout_cycles;
+
+        if(seq_h == null || sqr_h == null || clk_vif == null) begin
+            `uvm_fatal(get_type_name(), $sformatf(
+                "invalid handles when starting subsequence: %s", timeout_context))
+        end
+
+        timeout_cycles = get_sequence_timeout_cycles();
+
+        fork
+            begin
+                seq_h.start(sqr_h);
+                seq_done = 1;
+            end
+            begin
+                repeat(timeout_cycles) @(posedge clk_vif.aclk);
+            end
+        join_any
+        disable fork;
+
+        if(!seq_done) begin
+            `uvm_fatal(get_type_name(), $sformatf(
+                "subsequence timeout after %0d cycles: %s",
+                timeout_cycles, timeout_context))
+        end
     endtask
 endclass
 

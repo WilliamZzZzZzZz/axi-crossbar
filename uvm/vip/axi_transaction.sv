@@ -13,6 +13,10 @@ class axi_transaction extends uvm_sequence_item;
     int wbeat_finish;
     int b_finish;
     int rbeat_finish;
+
+    bit timed_out = 0;
+    string timeout_stage = "";
+    string timeout_detail = "";
     
     //pipeline-mode, driver checks this flag before sending response back
     bit response_requested = 1;
@@ -107,6 +111,9 @@ class axi_transaction extends uvm_sequence_item;
     
     `uvm_object_utils_begin(axi_transaction)
         `uvm_field_enum(trans_type_enum, trans_type, UVM_ALL_ON)
+        `uvm_field_int(timed_out, UVM_ALL_ON)
+        `uvm_field_string(timeout_stage, UVM_ALL_ON)
+        `uvm_field_string(timeout_detail, UVM_ALL_ON)
         `uvm_field_int(awid, UVM_ALL_ON)
         `uvm_field_int(awaddr, UVM_ALL_ON | UVM_HEX)
         `uvm_field_enum(burst_len_enum, awlen, UVM_ALL_ON)
