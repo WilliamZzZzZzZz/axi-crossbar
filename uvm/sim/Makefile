@@ -1,3 +1,10 @@
+# --- Agent 仿真双重保险配置开始 ---
+SHELL := /bin/bash
+export LM_LICENSE_FILE := 27000@localhost
+export SNPSLMD_LICENSE_FILE := 27000@localhost
+.PHONY: elab run clean
+# --- Agent 仿真双重保险配置结束 ---
+
 #############################
 # User variables
 #############################
@@ -149,6 +156,6 @@ killdve:
 	@echo "Killing all DVE processes..."
 	-pkill -f dve
 
-KEEP_FILES = Makefile axicb_debug_wave.do axicb_sim_run.do
+KEEP_FILES = Makefile axicb_debug_wave.do axicb_sim_run.do with_vcs_env.sh
 clean:
 	find . -maxdepth 1 ! -name '.' $(foreach f,$(KEEP_FILES),! -name '$(f)') -exec rm -rf {} +
