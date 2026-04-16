@@ -88,6 +88,11 @@ class axi_master_read_driver extends uvm_object;
             //every forever loop only driven one beat
             forever begin
                 bit rlast_snapshot;
+
+                //pull up ready first, then wait for valid
+                @(vif.master_cb);
+                vif.master_cb.rready <= 1'b1;
+
                 timeout_cnt = 0;
                 do begin
                     @(vif.master_cb);
@@ -99,14 +104,11 @@ class axi_master_read_driver extends uvm_object;
                             cfg.handshake_timeout_cycles, i, beat_num, tr.araddr))
                     end
                 end while(vif.master_cb.rvalid === 1'b0);
+                //handshake success
 
                 tr.rdata[i] = vif.master_cb.rdata;
                 tr.rresp[i] = vif.master_cb.rresp;
                 rlast_snapshot = vif.master_cb.rlast;   //before handshake, task a snapshot of rlast, record rlast status
-
-                //handshake success
-                @(vif.master_cb);
-                vif.master_cb.rready <= 1'b1;
 
                 //after handshake, slave all signals would turn 0, so snapshot of rlast before handshake is important
                 @(vif.master_cb);

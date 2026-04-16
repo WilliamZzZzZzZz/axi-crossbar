@@ -42,7 +42,7 @@ class axi_slave_write_responder extends uvm_object;
                 @(vif.slave_cb);
                 //TIMEOUT_CHECK (slave allow to wait more time, no fatal but error)
                 timeout_cnt++;
-                if(timeout_cnt >= cfg.handshake_timeout_cycles * 5) begin
+                if(timeout_cnt >= cfg.idle_timeout_cycles) begin
                     `uvm_error(get_type_name(),$sformatf(
                         "AW channel(slave) idle %0d cycles. no awvalid received",
                         timeout_cnt))

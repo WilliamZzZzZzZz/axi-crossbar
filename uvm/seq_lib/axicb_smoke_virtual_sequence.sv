@@ -14,8 +14,8 @@ class axicb_smoke_virtual_sequence extends axicb_base_virtual_sequence;
         `uvm_info(get_type_name(), "========== smoke_test_start ==========", UVM_LOW)
         write_and_read_test(0, 0);
         write_and_read_test(0, 1);
-        // write_and_read_test(1, 0);
-        // write_and_read_test(1, 1);
+        write_and_read_test(1, 0);
+        write_and_read_test(1, 1);
         `uvm_info(get_type_name(), "========== smoke_test_end ============", UVM_LOW)
     endtask
 

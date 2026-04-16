@@ -9,7 +9,8 @@ class axi_configuration extends uvm_object;
     int strb_width = 4;
     int addr_width = 32;
 
-    int handshake_timeout_cycles = 2000;
+    int handshake_timeout_cycles = 500;
+    int idle_timeout_cycles = 5000;     //for slave AW and AR channel
 
     function new(string name = "axi_configuration");
         super.new(name);

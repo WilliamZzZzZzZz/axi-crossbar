@@ -40,7 +40,7 @@ class axi_slave_read_responder extends uvm_object;
                 @(vif.slave_cb);
                 //TIMEOUT_CHECK(slave allow to wait more time)
                 timeout_cnt++;
-                if(timeout_cnt >= cfg.handshake_timeout_cycles*5) begin
+                if(timeout_cnt >= cfg.idle_timeout_cycles) begin
                     `uvm_error(get_type_name(), $sformatf(
                         "AR channel(slave) timeout %0d cycles.", timeout_cnt))
                     timeout_cnt = 0;
@@ -60,7 +60,6 @@ class axi_slave_read_responder extends uvm_object;
             tr.arregion = vif.slave_cb.arregion;
             tr.aruser   = vif.slave_cb.aruser;
             //after handshake, deassert ready signal
-            @(vif.slave_cb);
             vif.slave_cb.arready <= 1'b0;
             ar2r_mbx.put(tr);
         end
@@ -115,8 +114,6 @@ class axi_slave_read_responder extends uvm_object;
                     end
                 end while(vif.slave_cb.rready === 1'b0);
                 //handshake success
-
-                @(vif.slave_cb);
                 vif.slave_cb.rid    <= '0;
                 vif.slave_cb.rdata  <= '0;
                 vif.slave_cb.rresp  <= '0;

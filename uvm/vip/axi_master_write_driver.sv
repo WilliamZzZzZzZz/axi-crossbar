@@ -128,13 +128,30 @@ class axi_master_write_driver extends uvm_object;
     //write response channel
     virtual task drive_b_channel();
         axi_transaction tr;
+        int timeout_cnt;
         forever begin
             aw2b_mbx.get(tr);
 
+            //pull up ready first, then wait for valid
+            @(vif.master_cb);
+            vif.master_cb.bready <= 1'b1;
+
             //wait for bvalid:0->1, while keep bready = 0
+            timeout_cnt = 0;
             do begin
                 @(vif.master_cb);
+                //TIMEOUT_CHECK
+                timeout_cnt++;
+                if(timeout_cnt >= cfg.handshake_timeout_cycles) begin
+                    `uvm_fatal(get_type_name(), $sformatf(
+                        "B channel handshake timeout %0d cycles. awaddr= 0x%08h awid=0x%08h",
+                        cfg.handshake_timeout_cycles, tr.awaddr, tr.awid))
+                end
             end while(vif.master_cb.bvalid === 1'b0);
+            //handshake success
+            //store response info
+            tr.bid   = vif.master_cb.bid;
+            tr.bresp = vif.master_cb.bresp;            
 
             //check id
             if(vif.master_cb.bid != tr.awid) begin
@@ -143,14 +160,6 @@ class axi_master_write_driver extends uvm_object;
             else begin
                 `uvm_info(get_type_name(), "ID Check PASS!", UVM_LOW)
             end
-
-            //store response info
-            tr.bid   = vif.master_cb.bid;
-            tr.bresp = vif.master_cb.bresp;
-
-            //after bvalid hold 1 cycle, then handshake
-            @(vif.master_cb);
-            vif.master_cb.bready <= 1'b1;
 
             //wait for the hanshake take effect
             @(vif.master_cb);
