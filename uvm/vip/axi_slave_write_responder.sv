@@ -27,6 +27,7 @@ class axi_slave_write_responder extends uvm_object;
             join_none
             @(posedge vif.arst);
             disable fork;   //over reset, unfinished threads all should be killed
+            flush_mailboxes();
         end
     endtask
 
@@ -202,6 +203,13 @@ class axi_slave_write_responder extends uvm_object;
             vif.slave_cb.buser  <= '0;
         end
     endtask
+
+    local function void flush_mailboxes();
+        axi_transaction dummy;
+        while (aw2w_mbx.try_get(dummy));
+        while (w2b_mbx.try_get(dummy));
+        `uvm_info(get_type_name(), "RESET ENABLE, CLEAR WRITE RESPONDER MAILBOXES", UVM_LOW)
+    endfunction
 
 endclass 
 

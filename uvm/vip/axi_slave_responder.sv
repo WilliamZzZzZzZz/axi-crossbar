@@ -48,25 +48,14 @@ class axi_slave_responder extends uvm_component;
     endtask
 
     virtual task reset_listener();
+        vif.reset_slave_signals();
+        mem.clear();
+
         forever begin
             @(posedge vif.arst);
-            //protocol regulation: SLAVE pull down 2 channels' VAILD
-            vif.slave_cb.bvalid <= '0;
-            vif.slave_cb.rvalid <= '0;
-            //pull down other signals are better
-            //B
-            vif.slave_cb.bid    <= '0;
-            vif.slave_cb.bresp  <= '0;
-            vif.slave_cb.buser  <= '0;
-            //R
-            vif.slave_cb.rid    <= '0;
-            vif.slave_cb.rdata  <= '0;
-            vif.slave_cb.rresp  <= '0;
-            vif.slave_cb.rlast  <= '0;
-            vif.slave_cb.ruser  <= '0;
-            //clear memory
+            vif.reset_slave_signals();
             mem.clear();
-        end
+        end 
     endtask
 
 endclass
