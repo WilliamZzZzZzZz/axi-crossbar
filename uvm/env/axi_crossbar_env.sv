@@ -45,9 +45,9 @@ class axi_crossbar_env extends uvm_env;
         mst_agent00.item_collected_port.connect(cov.analysis_export);
         mst_agent01.item_collected_port.connect(scb.analysis_export);
         mst_agent01.item_collected_port.connect(cov.analysis_export);
-        slv_agent00.item_collected_port.connect(scb.analysis_export);
+        // slv_agent00.item_collected_port.connect(scb.analysis_export);
         slv_agent00.item_collected_port.connect(cov.analysis_export);
-        slv_agent01.item_collected_port.connect(scb.analysis_export);
+        // slv_agent01.item_collected_port.connect(scb.analysis_export);
         slv_agent01.item_collected_port.connect(cov.analysis_export);
     endfunction
 

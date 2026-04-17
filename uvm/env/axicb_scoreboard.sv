@@ -11,7 +11,7 @@ class axicb_scoreboard extends uvm_subscriber #(axi_transaction);
 
     //associative array: simulate DUT's expected behaviours
     //only be write-in data's address occupy memory
-    bit [31:0] ref_mem[bit [15:0]];
+    bit [DATA_WIDTH - 1:0] ref_mem[bit [ADDR_WIDTH - 1:0]];
 
     function new(string name = "axicb_scoreboard", uvm_component parent = null);
         super.new(name, parent);
@@ -31,9 +31,9 @@ class axicb_scoreboard extends uvm_subscriber #(axi_transaction);
     //store expected data in ref_mem
     local function void process_write(axi_transaction tr);
         int beats;
-        bit [15:0] addr;            //the raw start_address of first beat
-        bit [15:0] word_addr;       //first beat's aligned address
-        bit [31:0] old_word;
+        bit [ADDR_WIDTH - 1:0] addr;            //the raw start_address of first beat
+        bit [ADDR_WIDTH - 1:0] word_addr;       //first beat's aligned address
+        bit [DATA_WIDTH - 1:0] old_word;
         beats = int'(tr.awlen) + 1;
         
         `uvm_info(get_type_name(), $sformatf(
@@ -60,9 +60,9 @@ class axicb_scoreboard extends uvm_subscriber #(axi_transaction);
     //compare rdata with expected data in ref_mem
     local function void process_read(axi_transaction tr);
         int beats;
-        bit [15:0] addr;
-        bit [15:0] word_addr;
-        bit [31:0] expected_data;
+        bit [ADDR_WIDTH - 1:0] addr;
+        bit [ADDR_WIDTH - 1:0] word_addr;
+        bit [DATA_WIDTH - 1:0] expected_data;
         beats = int'(tr.arlen) + 1;
 
         for(int i = 0; i < beats; i++) begin
@@ -86,14 +86,14 @@ class axicb_scoreboard extends uvm_subscriber #(axi_transaction);
 
     //calculate the beat's actual address
     local function bit [15:0] calculate_beat_addr(
-        bit [15:0]      base_addr,
+        bit [ADDR_WIDTH - 1:0]      base_addr,
         burst_type_enum burst_type,
         burst_size_enum burst_size,
         int             beat_idx
     );  
         int unsigned    stride;
-        bit [15:0]      aligned_start;
-        bit [15:0]      beat_addr;
+        bit [ADDR_WIDTH - 1:0]      aligned_start;
+        bit [ADDR_WIDTH - 1:0]      beat_addr;
 
         stride        = 1 << int'(burst_size);      //byte number of every beat 
         aligned_start = (base_addr / stride) * stride;    //dynamically calculate first beat's aligned addr according to burst_szie
@@ -112,11 +112,11 @@ class axicb_scoreboard extends uvm_subscriber #(axi_transaction);
 
     //according to wstrb, merge old_data and new_data
     local function bit [31:0] merge_data_with_strb(
-        bit [31:0] old_data,
-        bit [31:0] new_data,
-        bit [3:0] wstrb
+        bit [DATA_WIDTH - 1:0] old_data,
+        bit [DATA_WIDTH - 1:0] new_data,
+        bit [STRB_WIDTH - 1:0] wstrb
     );
-        bit [31:0] new_word;
+        bit [DATA_WIDTH - 1:0] new_word;
         new_word = old_data;
 
         //according to wstrb, merge old_data and new_data
