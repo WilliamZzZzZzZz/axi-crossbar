@@ -495,13 +495,31 @@ generate
 
         assign trans_start = s_axi_arvalid_mux && s_axi_arready_mux && a_grant_valid;
 
+//======================================== original design part ===================================================//
+        // // read response forwarding
+        // wire [CL_S_COUNT-1:0] r_select = m_axi_rid[n*M_ID_WIDTH +: M_ID_WIDTH] >> S_ID_WIDTH;
+
+        // assign int_axi_rvalid[n*S_COUNT +: S_COUNT] = int_m_axi_rvalid[n] << r_select;
+        // assign int_m_axi_rready[n] = int_axi_rready[r_select*M_COUNT+n];
+
+        // assign trans_complete = int_m_axi_rvalid[n] && int_m_axi_rready[n] && int_m_axi_rlast[n];
+//======================================== original design part ===================================================//
+
+//======================================== new design(fix bug) ====================================================//
         // read response forwarding
-        wire [CL_S_COUNT-1:0] r_select = m_axi_rid[n*M_ID_WIDTH +: M_ID_WIDTH] >> S_ID_WIDTH;
+        // Only decode RID when RVALID is really asserted; otherwise RID/RLAST are don't-care.
+        wire r_resp_valid = (int_m_axi_rvalid[n] === 1'b1);
+        wire r_resp_last = (int_m_axi_rlast[n] === 1'b1);
+        wire [CL_S_COUNT-1:0] r_select = r_resp_valid ?
+            (int_m_axi_rid[n*M_ID_WIDTH +: M_ID_WIDTH] >> S_ID_WIDTH) :
+            {CL_S_COUNT{1'b0}};
+        wire r_resp_ready = r_resp_valid && (int_axi_rready[r_select*M_COUNT+n] === 1'b1);
 
-        assign int_axi_rvalid[n*S_COUNT +: S_COUNT] = int_m_axi_rvalid[n] << r_select;
-        assign int_m_axi_rready[n] = int_axi_rready[r_select*M_COUNT+n];
+        assign int_axi_rvalid[n*S_COUNT +: S_COUNT] = r_resp_valid << r_select;
+        assign int_m_axi_rready[n] = r_resp_ready;
 
-        assign trans_complete = int_m_axi_rvalid[n] && int_m_axi_rready[n] && int_m_axi_rlast[n];
+        assign trans_complete = r_resp_valid && r_resp_ready && r_resp_last;
+//======================================== new design(fix bug) ====================================================//
 
         // M side register
         axi_register_rd #(
