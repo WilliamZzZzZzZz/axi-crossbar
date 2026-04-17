@@ -593,13 +593,31 @@ generate
             w_select_reg <= w_select_next;
         end
 
+//======================================== original design part ===================================================//
         // write response forwarding
-        wire [CL_S_COUNT-1:0] b_select = m_axi_bid[n*M_ID_WIDTH +: M_ID_WIDTH] >> S_ID_WIDTH;
+        // wire [CL_S_COUNT-1:0] b_select = m_axi_bid[n*M_ID_WIDTH +: M_ID_WIDTH] >> S_ID_WIDTH;
 
-        assign int_axi_bvalid[n*S_COUNT +: S_COUNT] = int_m_axi_bvalid[n] << b_select;
-        assign int_m_axi_bready[n] = int_axi_bready[b_select*M_COUNT+n];
+        // assign int_axi_bvalid[n*S_COUNT +: S_COUNT] = int_m_axi_bvalid[n] << b_select;
+        // assign int_m_axi_bready[n] = int_axi_bready[b_select*M_COUNT+n];
 
-        assign trans_complete = int_m_axi_bvalid[n] && int_m_axi_bready[n];
+        // assign trans_complete = int_m_axi_bvalid[n] && int_m_axi_bready[n];
+//======================================== original design part ===================================================//
+
+
+//======================================== new design(fix bug) ====================================================//
+        // write response forwarding
+        // Only decode BID when BVALID is really asserted; otherwise BID is don't-care.
+        wire b_resp_valid = (int_m_axi_bvalid[n] === 1'b1);
+        wire [CL_S_COUNT-1:0] b_select = b_resp_valid ?
+            (int_m_axi_bid[n*M_ID_WIDTH +: M_ID_WIDTH] >> S_ID_WIDTH) :
+            {CL_S_COUNT{1'b0}};
+        wire b_resp_ready = b_resp_valid && (int_axi_bready[b_select*M_COUNT+n] === 1'b1);
+
+        assign int_axi_bvalid[n*S_COUNT +: S_COUNT] = b_resp_valid << b_select;
+        assign int_m_axi_bready[n] = b_resp_ready;
+
+        assign trans_complete = b_resp_valid && b_resp_ready;
+//======================================== new design(fix bug) ====================================================//
 
         // M side register
         axi_register_wr #(
