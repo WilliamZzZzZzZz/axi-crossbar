@@ -18,6 +18,7 @@ class axicb_smoke_test extends axicb_base_test;
         super.run_phase(phase);
 
         phase.raise_objection(this);
+        if(!seq.randomize()) `uvm_fatal(get_type_name(), "sequence randomization failed!")
         seq.start(env.virt_sqr);
         phase.drop_objection(this);
     endtask

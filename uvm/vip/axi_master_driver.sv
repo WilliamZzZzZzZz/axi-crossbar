@@ -43,9 +43,7 @@ class axi_master_driver extends uvm_driver#(axi_transaction);
             //thread 2：get req from thread 6, via 2 channels drive info to dut
             read_drv.run_read_channel();
             //thread 3: reset signal monitor task
-            forever begin
-                reset_listener();
-            end
+            reset_listener();
             //thread 4: collect write rsp and send back to sequencer
             forever begin
                 axi_transaction wr_rsp;
