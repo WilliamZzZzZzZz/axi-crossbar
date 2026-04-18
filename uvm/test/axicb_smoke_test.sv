@@ -23,6 +23,20 @@ class axicb_smoke_test extends axicb_base_test;
         phase.drop_objection(this);
     endtask
 
+    function void report_phase(uvm_phase phase);
+        uvm_report_server srv = uvm_report_server::get_server();
+        super.report_phase(phase);
+        //CHECK_SCOREBOARD
+        if(env.scb.check_count == 0)
+            `uvm_error(get_type_name(), "ATTENTION: scoreboard check 0 transaction!")
+        //summary of entire test
+        if(srv.get_severity_count(UVM_ERROR) > 0)
+            `uvm_info(get_type_name(), $sformatf(
+                "======= SMOKE TEST FAILED ======= (%0d errors)", srv.get_severity_count(UVM_ERROR)), UVM_NONE)
+        else
+            `uvm_info(get_type_name(), "======= SMOKE TEST PASSED ======= ", UVM_NONE)
+    endfunction
+
 endclass
 
 `endif 

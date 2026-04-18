@@ -10,7 +10,7 @@ class axi_master_single_sequence extends axi_base_sequence;
     rand burst_len_enum burst_len;
     rand burst_type_enum burst_type;
     rand burst_size_enum burst_size = BURST_SIZE_4BYTES;
-
+    
     //tr_varibles are only use for tranasction's transfermation
     //no present any real signals
     rand bit [ID_WIDTH - 1:0]       tr_id = '0;
@@ -26,6 +26,8 @@ class axi_master_single_sequence extends axi_base_sequence;
     //default-mode:  1(blocking)
     //pipeline-mode: 0(non-blocking)
     bit wait_for_response = 1;
+    bit [1:0] write_bresp;
+    bit [1:0] read_rresp;
 
     constraint single_trans_type_cstr {
         trans_type inside {READ, WRITE};
@@ -93,7 +95,7 @@ class axi_master_single_sequence extends axi_base_sequence;
         //blocking
         if(wait_for_response) begin
             get_response(rsp);
-
+            write_bresp = rsp.bresp;
             //id set 0 in smoke test, so no need to check id temporarily
             //check response
             if(rsp.bresp == OKAY) begin
@@ -135,6 +137,7 @@ class axi_master_single_sequence extends axi_base_sequence;
         //blocking
         if(wait_for_response) begin
             get_response(rsp);
+            read_rresp = rsp.rresp[0];
 
             every_beat_data = new[actual_beats];
             foreach(every_beat_data[i]) begin

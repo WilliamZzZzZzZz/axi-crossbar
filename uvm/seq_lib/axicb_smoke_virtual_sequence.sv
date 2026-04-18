@@ -5,11 +5,6 @@ class axicb_smoke_virtual_sequence extends axicb_base_virtual_sequence;
 
     `uvm_object_utils(axicb_smoke_virtual_sequence)
 
-    rand int unsigned txn_per_path;     //txn number of every specific path
-    constraint c_txn_per_path {
-        txn_per_path inside {[2:10]};
-    }
-
     function new(string name = "axicb_smoke_virtual_sequence");
         super.new(name);
     endfunction
@@ -89,14 +84,19 @@ class axicb_smoke_virtual_sequence extends axicb_base_virtual_sequence;
             single_read.wait_for_response   = 1;
             single_read.start(p_sequencer);
             
-            //============= compare ===============//
-            if(compare_single_data(wr_data, single_read.data)) begin
+            //============= compare and check ===============//
+            if(compare_single_data(wr_data, single_read.data))
                 `uvm_info(get_type_name(), $sformatf("master %0d to slave %0d write and read PASSED!", mst_idx, slv_idx), UVM_MEDIUM)
-            end else begin
+            else
                 `uvm_error(get_type_name(), $sformatf("master %0d to slave %0d write and read FAILED!", mst_idx, slv_idx))
-            end                                       
+            if(single_read.rresp != OKAY)
+                `uvm_error(get_type_name(), $sformatf("mst%0d -> slv%0d, txn No.%0d rresp not OKAY: %0b", mst_idx, slv_idx, i, single_read.rresp))                  
+            if(single_write.bresp != OKAY)
+                `uvm_error(get_type_name(), $sformatf("mst%0d -> slv%0d, txn No.%0d bresp not OKAY: %0b", mst_idx, slv_idx, i, single_write.bresp))                  
+
         end
     endtask
+
 endclass
 
 `endif 

@@ -14,6 +14,7 @@ class axicb_single_read_sequence extends axicb_base_sequence;
     bit [31:0] every_beat_data[];   //store every beat's data
 
     bit wait_for_response = 1;
+    bit [1:0] rresp;
 
     function new(string name = "axicb_single_read_sequence");
         super.new(name);
@@ -26,12 +27,13 @@ class axicb_single_read_sequence extends axicb_base_sequence;
         `uvm_info(get_type_name(), "entering...", UVM_LOW)
 
         axi_single = axi_master_single_sequence::type_id::create("axi_single");
-        axi_single.trans_type  = READ;
-        axi_single.addr        = addr;
-        axi_single.burst_len   = burst_len;
-        axi_single.burst_type  = burst_type;
-        axi_single.burst_size  = burst_size;
+        axi_single.trans_type        = READ;
+        axi_single.addr              = addr;
+        axi_single.burst_len         = burst_len;
+        axi_single.burst_type        = burst_type;
+        axi_single.burst_size        = burst_size;
         axi_single.wait_for_response = wait_for_response;
+        axi_single.read_rresp        = rresp;
 
         target_sqr = p_sequencer.get_master_sqr(src_master_idx);     //'0' means send tr to slave00 port
         axi_single.start(target_sqr);
