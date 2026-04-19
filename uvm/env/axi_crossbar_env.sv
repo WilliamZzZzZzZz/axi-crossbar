@@ -42,13 +42,10 @@ class axi_crossbar_env extends uvm_env;
         virt_sqr.axi_mst_sqr00 = mst_agent00.sequencer;
         virt_sqr.axi_mst_sqr01 = mst_agent01.sequencer;
         mst_agent00.item_collected_port.connect(scb.analysis_export);
-        mst_agent00.item_collected_port.connect(cov.analysis_export);
         mst_agent01.item_collected_port.connect(scb.analysis_export);
-        mst_agent01.item_collected_port.connect(cov.analysis_export);
-        // slv_agent00.item_collected_port.connect(scb.analysis_export);
-        slv_agent00.item_collected_port.connect(cov.analysis_export);
-        // slv_agent01.item_collected_port.connect(scb.analysis_export);
-        slv_agent01.item_collected_port.connect(cov.analysis_export);
+
+        mst_agent00.item_collected_port.connect(cov.mst00_export);
+        mst_agent01.item_collected_port.connect(cov.mst01_export);
     endfunction
 
 endclass
