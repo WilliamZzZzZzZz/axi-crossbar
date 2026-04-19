@@ -29,7 +29,7 @@
         BURST_LEN_6BEATS  = 8'b00000101,
         BURST_LEN_7BEATS  = 8'b00000110,
         BURST_LEN_8BEATS  = 8'b00000111,
-        BURST_LEN_16BEATS = 8'b00010001
+        BURST_LEN_16BEATS = 8'b00001111
     } burst_len_enum;
 
     typedef enum bit[2:0] {

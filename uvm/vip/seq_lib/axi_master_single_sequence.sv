@@ -10,7 +10,9 @@ class axi_master_single_sequence extends axi_base_sequence;
     rand burst_len_enum burst_len;
     rand burst_type_enum burst_type;
     rand burst_size_enum burst_size = BURST_SIZE_4BYTES;
-    
+    bit [1:0] write_bresp;
+    bit [1:0] read_rresp;
+
     //tr_varibles are only use for tranasction's transfermation
     //no present any real signals
     rand bit [ID_WIDTH - 1:0]       tr_id = '0;
@@ -26,8 +28,10 @@ class axi_master_single_sequence extends axi_base_sequence;
     //default-mode:  1(blocking)
     //pipeline-mode: 0(non-blocking)
     bit wait_for_response = 1;
-    bit [1:0] write_bresp;
-    bit [1:0] read_rresp;
+
+    //1: this illegal addr is inserted by decerr_test intentionally, dont print error
+    //0: no illegal addr insert, if DUT return DECERR, print error
+    bit expect_decerr = 0; 
 
     constraint single_trans_type_cstr {
         trans_type inside {READ, WRITE};
@@ -43,11 +47,10 @@ class axi_master_single_sequence extends axi_base_sequence;
         if(!wait_for_response) begin
             set_response_queue_error_report_disabled(1);
         end
-        if(trans_type == WRITE) begin
+        if(trans_type == WRITE)
             do_write();
-        end else begin
+        else
             do_read();
-        end
     endtask
 
     virtual task do_write();
@@ -96,13 +99,13 @@ class axi_master_single_sequence extends axi_base_sequence;
         if(wait_for_response) begin
             get_response(rsp);
             write_bresp = rsp.bresp;
-            //id set 0 in smoke test, so no need to check id temporarily
-            //check response
-            if(rsp.bresp == OKAY) begin
-                `uvm_info(get_type_name(), $sformatf("write complete: ADDR=%0h DATA=%0h", addr, data), UVM_MEDIUM)
-            end else begin
-                `uvm_error(get_type_name(), $sformatf("write error: ADDR=%0h DATA=%0h", addr, data))
-            end
+            //BRESP_CHECK
+            if(write_bresp == OKAY)
+                `uvm_info(get_type_name(), $sformatf("write complete: ADDR:%0h, DATA:%0h", addr, data), UVM_LOW)
+            else if(write_bresp == DECERR && expect_decerr == 1)
+                `uvm_info(get_type_name(), $sformatf("write DECERR(expected): ADDR:%0h, DATA:%0h, bresp:%0b", addr, data, write_bresp), UVM_LOW)
+            else
+                `uvm_error(get_type_name(), $sformatf("write error: ADDR:%0h, DATA:%0h, bresp:%0b",addr, data, write_bresp))
         end
         //non-blocking, finish_item return and immediately finish
         //sequence dont wait B channel finish, and send next transaction immediately
@@ -143,17 +146,14 @@ class axi_master_single_sequence extends axi_base_sequence;
             foreach(every_beat_data[i]) begin
                 every_beat_data[i] = rsp.rdata[i];
             end
-
             data = every_beat_data[0];
-
-            //id set 0 in smoke test, so no need to check id temporarily
-            //check response
-            if(rsp.rresp[0] == OKAY) begin
-                data =rsp.rdata[0];
-                `uvm_info(get_type_name(), $sformatf("read complete: ADDR=%0h DATA=%0h", addr, data), UVM_MEDIUM)
-            end else begin
-                `uvm_error(get_type_name(), $sformatf("read error: ADDR=%0h DATA=%0h", addr, data))
-            end
+            //RRESP_CHECK
+            if(read_rresp == OKAY)
+                `uvm_info(get_type_name(), $sformatf("write complete: ADDR:%0h, DATA:%0h", addr, data), UVM_LOW)
+            else if(read_rresp == DECERR && expect_decerr == 1)
+                `uvm_info(get_type_name(), $sformatf("write DECERR(expected): ADDR:%0h, DATA:%0h, bresp:%0b", addr, data, read_rresp), UVM_LOW)
+            else
+                `uvm_error(get_type_name(), $sformatf("write error: ADDR:%0h, DATA:%0h, bresp:%0b",addr, data, read_rresp))
         end
     endtask
 endclass

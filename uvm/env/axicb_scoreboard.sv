@@ -8,6 +8,7 @@ class axicb_scoreboard extends uvm_subscriber #(axi_transaction);
     //print in the report_phase 
     int unsigned check_count;   //total beats compared
     int unsigned error_count;   //total error beats
+    int unsigned decerr_count;
 
     //associative array: simulate DUT's expected behaviours
     //only be write-in data's address occupy memory
@@ -36,6 +37,19 @@ class axicb_scoreboard extends uvm_subscriber #(axi_transaction);
         bit [DATA_WIDTH - 1:0] old_word;
         beats = int'(tr.awlen) + 1;
         
+        //check DECERR and bresp
+        if(is_decerr_expected(tr.awaddr)) begin
+            decerr_count++;
+            if(tr.bresp !== DECERR) 
+                `uvm_error(get_type_name(), $sformatf("DECERR expected but bresp: %0b, ADDR: %08h", tr.bresp, tr.awaddr))
+            else
+                `uvm_info(get_type_name(), $sformatf("WRITE DECERR check PASS: ADDR: %08h", tr.awaddr), UVM_LOW)
+                return;     //jump out of entire 'process_write()', in case illegal addr and data into ref_mem       
+        end else begin  //usual bresp check
+            if(tr.bresp !== OKAY)
+                `uvm_error(get_type_name(), $sformatf("write option got a non-OKAY response! bresp: %0b, ADDR: %08h ", tr.bresp, tr.awaddr))
+        end
+
         `uvm_info(get_type_name(), $sformatf(
             "write-action: base_addr=0x%04h len=%0d size=%0d type=%0s",
             tr.awaddr, tr.awlen, tr.awsize, tr.awburst.name()), UVM_MEDIUM)
@@ -64,6 +78,23 @@ class axicb_scoreboard extends uvm_subscriber #(axi_transaction);
         bit [ADDR_WIDTH - 1:0] word_addr;
         bit [DATA_WIDTH - 1:0] expected_data;
         beats = int'(tr.arlen) + 1;
+
+        //check DECERR and rresp
+        if(is_decerr_expected(tr.araddr)) begin
+            decerr_count++;
+            foreach(tr.rresp[i]) begin
+                if(tr.rresp[i] !== DECERR)
+                    `uvm_error(get_type_name(), $sformatf("DECERR expected but rresp[%0d]: %0b, ADDR: %08h", i, tr.rresp[i], tr.araddr))
+                else
+                    `uvm_info(get_type_name(), $sformatf("read DECERR check PASS: ADDR: %08h, beat_idx: %0d", tr.araddr, i), UVM_LOW)
+                    return;
+            end
+        end else begin  //usual rresp check
+            foreach(tr.rresp[i]) begin
+                if(tr.rresp[i] !== OKAY)
+                    `uvm_error(get_type_name(), $sformatf("read option got a non-OKAY response! rresp[%0d]: %0b, ADDR: %08h", i, tr.rresp[i], tr.araddr))
+            end
+        end
 
         for(int i = 0; i < beats; i++) begin
             addr = calculate_beat_addr(tr.araddr, tr.arburst, tr.arsize, i);
@@ -127,13 +158,20 @@ class axicb_scoreboard extends uvm_subscriber #(axi_transaction);
         return new_word;
     endfunction
 
+    //check decerr whether is expected
+    local function bit is_decerr_expected(bit [ADDR_WIDTH - 1:0] addr);
+        if(addr >= 32'h0000_0000 && addr <= 32'h0000_FFFF) return 0;
+        if(addr >= 32'h0001_0000 && addr <= 32'h0001_FFFF) return 0;
+        return 1;
+    endfunction
+
     //automatically print report info
     function void report_phase(uvm_phase phase);
         super.report_phase(phase);
         if(error_count == 0) begin
-            `uvm_info(get_type_name(), $sformatf("Scoreboard PASS: check_count: %0d, 0 error", check_count), UVM_LOW)
+            `uvm_info(get_type_name(), $sformatf("Scoreboard PASS: check_count: %0d, decerr_count: %0d, error: 0", check_count, decerr_count), UVM_LOW)
         end else begin
-            `uvm_error(get_type_name(),$sformatf("Scoreboard ERROR: check_count: %0d, error_count: %0d", check_count, error_count))
+            `uvm_error(get_type_name(),$sformatf("Scoreboard ERROR: check_count: %0d, , error_count: %0d", check_count, error_count))
         end
     endfunction
 endclass

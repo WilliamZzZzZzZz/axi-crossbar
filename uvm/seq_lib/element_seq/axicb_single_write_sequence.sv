@@ -15,7 +15,9 @@ class axicb_single_write_sequence extends axicb_base_sequence;
     bit [3:0] every_beat_wstrb[];
 
     bit wait_for_response = 1;
+    bit expect_decerr = 0;
     bit [1:0] bresp;
+    bit [ID_WIDTH - 1:0] txn_id;
 
     function new(string name = "axicb_single_write_sequence");
         super.new(name);
@@ -37,10 +39,12 @@ class axicb_single_write_sequence extends axicb_base_sequence;
         axi_single.every_beat_data   = every_beat_data;       
         axi_single.every_beat_wstrb  = every_beat_wstrb;
         axi_single.wait_for_response = wait_for_response;
-        axi_single.write_bresp       = bresp;
+        axi_single.tr_id             = txn_id;
+        axi_single.expect_decerr     = expect_decerr;
 
         target_sqr = p_sequencer.get_master_sqr(src_master_idx);     //'0' means send tr to slave00 port
         axi_single.start(target_sqr);
+        bresp = axi_single.write_bresp;
 
         `uvm_info(get_type_name(), "exiting...", UVM_LOW)
     endtask
