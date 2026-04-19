@@ -2,7 +2,7 @@
 SHELL := /bin/bash
 export LM_LICENSE_FILE := 27000@localhost
 export SNPSLMD_LICENSE_FILE := 27000@localhost
-.PHONY: elab run clean
+.PHONY: elab run clean check
 # --- Agent 仿真双重保险配置结束 ---
 
 #############################
@@ -28,6 +28,17 @@ VFILES   := ../vip/axi_pkg.sv \
 # "make run T=smoke GUI=1 &" expands to TESTNAME=axicb_smoke_test
 ifdef T
 TESTNAME = axicb_$(T)_test
+endif
+
+# Support: make check <error|warning|info|fatal>
+ifeq ($(firstword $(MAKECMDGOALS)),check)
+ifneq ($(word 2,$(MAKECMDGOALS)),)
+SEVERITY := $(word 2,$(MAKECMDGOALS))
+CHECK_EXTRA_GOALS := $(wordlist 2,$(words $(MAKECMDGOALS)),$(MAKECMDGOALS))
+.PHONY: $(CHECK_EXTRA_GOALS)
+$(CHECK_EXTRA_GOALS):
+	@:
+endif
 endif
 
 # Support both:
@@ -137,6 +148,23 @@ htmlcov:
 #############################
 # Utility targets
 #############################
+check:
+	@if [ -z "$(strip $(SEVERITY))" ]; then \
+		echo "Usage: make check <error|warning|info|fatal>"; \
+		exit 1; \
+	fi
+	@if [ ! -f "$(RUN_LOG)" ]; then \
+		echo "Log file not found: $(RUN_LOG)"; \
+		echo "Run a simulation first, e.g.: make smoke"; \
+		exit 1; \
+	fi
+	@SEV=$$(echo "$(SEVERITY)" | tr '[:lower:]' '[:upper:]'); \
+	echo "========== UVM_$$SEV from $(RUN_LOG) =========="; \
+	grep -n "^UVM_$$SEV [^:]" "$(RUN_LOG)" || echo "(none found)"; \
+	echo "================================================"; \
+	COUNT=$$(grep -c "^UVM_$$SEV [^:]" "$(RUN_LOG)" 2>/dev/null); \
+	echo "Total: $$COUNT UVM_$$SEV message(s)"
+
 checkinfo:
 	@if [ -z "$(strip $(CLASS))" ]; then \
 		echo "Usage: make checkinfo CLASS=<uvm_type_name>"; \
