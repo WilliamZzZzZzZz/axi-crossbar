@@ -7,6 +7,9 @@ class axicb_virtual_sequencer extends uvm_sequencer;
     axi_master_sequencer axi_mst_sqr00;
     axi_master_sequencer axi_mst_sqr01;
 
+    virtual axi_if#(.ID_WIDTH(M_ID_WIDTH)) vif_slv00;
+    virtual axi_if#(.ID_WIDTH(M_ID_WIDTH)) vif_slv01;
+
     function axi_master_sequencer get_master_sqr(int unsigned idx);
         case(idx)
             0: return axi_mst_sqr00;

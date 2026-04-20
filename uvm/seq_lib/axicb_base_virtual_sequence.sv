@@ -11,8 +11,11 @@ class axicb_base_virtual_sequence extends uvm_sequence;
     axicb_single_write_sequence single_write;
     axicb_single_read_sequence single_read;
 
-    virtual axi_if#(.ID_WIDTH(ID_WIDTH)) vif_mst00;
-    virtual axi_if#(.ID_WIDTH(ID_WIDTH)) vif_mst01;
+    virtual axi_if#(.ID_WIDTH(ID_WIDTH))    vif_mst00;
+    virtual axi_if#(.ID_WIDTH(ID_WIDTH))    vif_mst01;
+    virtual axi_if#(.ID_WIDTH(M_ID_WIDTH))  vif_slv00;
+    virtual axi_if#(.ID_WIDTH(M_ID_WIDTH))  vif_slv01;
+
     virtual axi_if#(.ID_WIDTH(ID_WIDTH)) vif;       //default
 
     `uvm_declare_p_sequencer(axicb_virtual_sequencer)
@@ -29,11 +32,17 @@ class axicb_base_virtual_sequence extends uvm_sequence;
         if(p_sequencer.axi_mst_sqr00 == null || p_sequencer.axi_mst_sqr01 == null)
             `uvm_fatal(get_type_name(), "master sequencer handles are null in virtual sequencer")
 
+        //upstream VIF
         vif_mst00 = p_sequencer.axi_mst_sqr00.vif;
         vif_mst01 = p_sequencer.axi_mst_sqr01.vif;
         vif       = vif_mst00;                      //default
         if(vif_mst00 == null || vif_mst01 == null)
             `uvm_fatal(get_type_name(), "failed to get vif from master sequencers")
+        //downstream VIF
+        vif_slv00 = p_sequencer.vif_slv00;
+        vif_slv01 = p_sequencer.vif_slv01;
+        if(vif_slv00 == null || vif_slv01 == null)
+            `uvm_fatal(get_type_name(), "failed to get downstream vif from virtual sequencer")
 
         `uvm_info(get_type_name(), "exiting...", UVM_LOW)
     endtask

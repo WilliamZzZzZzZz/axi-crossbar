@@ -39,11 +39,16 @@ class axi_crossbar_env extends uvm_env;
     virtual function void connect_phase(uvm_phase phase);
         super.connect_phase(phase);
 
+        //sequencer connection
         virt_sqr.axi_mst_sqr00 = mst_agent00.sequencer;
         virt_sqr.axi_mst_sqr01 = mst_agent01.sequencer;
+        //virtual interface connection
+        virt_sqr.vif_slv00 = slv_agent00.vif;
+        virt_sqr.vif_slv01 = slv_agent01.vif;
+        //scoreboard connection
         mst_agent00.item_collected_port.connect(scb.analysis_export);
         mst_agent01.item_collected_port.connect(scb.analysis_export);
-
+        //coverage connection
         mst_agent00.item_collected_port.connect(cov.mst00_export);
         mst_agent01.item_collected_port.connect(cov.mst01_export);
     endfunction

@@ -40,11 +40,12 @@ class axicb_scoreboard extends uvm_subscriber #(axi_transaction);
         //check DECERR and bresp
         if(is_decerr_expected(tr.awaddr)) begin
             decerr_count++;
-            if(tr.bresp !== DECERR) 
+            if(tr.bresp !== DECERR) begin
                 `uvm_error(get_type_name(), $sformatf("DECERR expected but bresp: %0b, ADDR: %08h", tr.bresp, tr.awaddr))
-            else
+            end else begin
                 `uvm_info(get_type_name(), $sformatf("WRITE DECERR check PASS: ADDR: %08h", tr.awaddr), UVM_LOW)
-                return;     //jump out of entire 'process_write()', in case illegal addr and data into ref_mem       
+            end
+            return;     //jump out of entire 'process_write()', in case illegal addr and data into ref_mem       
         end else begin  //usual bresp check
             if(tr.bresp !== OKAY)
                 `uvm_error(get_type_name(), $sformatf("write option got a non-OKAY response! bresp: %0b, ADDR: %08h ", tr.bresp, tr.awaddr))
@@ -87,8 +88,8 @@ class axicb_scoreboard extends uvm_subscriber #(axi_transaction);
                     `uvm_error(get_type_name(), $sformatf("DECERR expected but rresp[%0d]: %0b, ADDR: %08h", i, tr.rresp[i], tr.araddr))
                 else
                     `uvm_info(get_type_name(), $sformatf("read DECERR check PASS: ADDR: %08h, beat_idx: %0d", tr.araddr, i), UVM_LOW)
-                    return;
             end
+            return;
         end else begin  //usual rresp check
             foreach(tr.rresp[i]) begin
                 if(tr.rresp[i] !== OKAY)
