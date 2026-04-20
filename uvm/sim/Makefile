@@ -110,6 +110,9 @@ run: elab
 smoke: TESTNAME = axicb_smoke_test
 smoke: run
 
+decerr: TESTNAME = axicb_decerr_test
+decerr: run
+
 #############################
 # Regression + Coverage
 # Usage: make regress
