@@ -16,7 +16,9 @@ class axicb_single_read_sequence extends axicb_base_sequence;
     bit wait_for_response = 1;
     bit expect_decerr = 0;
     bit [1:0] rresp;
-    bit [ID_WIDTH - 1:0] txn_id;
+    bit [ID_WIDTH - 1:0] arid;
+    bit [ID_WIDTH - 1:0] rid;
+    bit rlast;
 
     function new(string name = "axicb_single_read_sequence");
         super.new(name);
@@ -35,12 +37,14 @@ class axicb_single_read_sequence extends axicb_base_sequence;
         axi_single.burst_type        = burst_type;
         axi_single.burst_size        = burst_size;
         axi_single.wait_for_response = wait_for_response;
-        axi_single.tr_id             = txn_id;
+        axi_single.tr_id             = arid;
         axi_single.expect_decerr     = expect_decerr;
 
         target_sqr = p_sequencer.get_master_sqr(src_master_idx);     //'0' means send tr to slave00 port
         axi_single.start(target_sqr);
         rresp = axi_single.read_rresp;
+        rid   = axi_single.read_rid;
+        rlast = axi_single.read_rlast;
 
         if(wait_for_response) begin
             every_beat_data = axi_single.every_beat_data;

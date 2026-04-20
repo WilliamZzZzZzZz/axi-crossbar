@@ -12,6 +12,8 @@ class axi_master_single_sequence extends axi_base_sequence;
     rand burst_size_enum burst_size = BURST_SIZE_4BYTES;
     bit [1:0] write_bresp;
     bit [1:0] read_rresp;
+    bit [ID_WIDTH - 1:0] read_rid;
+    bit read_rlast;
 
     //tr_varibles are only use for tranasction's transfermation
     //no present any real signals
@@ -141,6 +143,8 @@ class axi_master_single_sequence extends axi_base_sequence;
         if(wait_for_response) begin
             get_response(rsp);
             read_rresp = rsp.rresp[0];
+            read_rid   = rsp.rid;
+            read_rlast = rsp.rlast;
 
             every_beat_data = new[actual_beats];
             foreach(every_beat_data[i]) begin
@@ -149,11 +153,11 @@ class axi_master_single_sequence extends axi_base_sequence;
             data = every_beat_data[0];
             //RRESP_CHECK
             if(read_rresp == OKAY)
-                `uvm_info(get_type_name(), $sformatf("write complete: ADDR:%0h, DATA:%0h", addr, data), UVM_LOW)
+                `uvm_info(get_type_name(), $sformatf("read complete: ADDR:%0h, DATA:%0h", addr, data), UVM_LOW)
             else if(read_rresp == DECERR && expect_decerr == 1)
-                `uvm_info(get_type_name(), $sformatf("write DECERR(expected): ADDR:%0h, DATA:%0h, bresp:%0b", addr, data, read_rresp), UVM_LOW)
+                `uvm_info(get_type_name(), $sformatf("read DECERR(expected): ADDR:%0h, DATA:%0h, rresp:%0b", addr, data, read_rresp), UVM_LOW)
             else
-                `uvm_error(get_type_name(), $sformatf("write error: ADDR:%0h, DATA:%0h, bresp:%0b",addr, data, read_rresp))
+                `uvm_error(get_type_name(), $sformatf("read error: ADDR:%0h, DATA:%0h, rresp:%0b",addr, data, read_rresp))
         end
     endtask
 endclass

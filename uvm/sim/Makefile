@@ -216,6 +216,6 @@ killdve: ## Kill all running DVE processes
 	@echo "Killing all DVE processes..."
 	-pkill -f dve
 
-KEEP_FILES = Makefile axicb_debug_wave.do axicb_sim_run.do with_vcs_env.sh
+KEEP_FILES = Makefile axicb_debug_wave.do axicb_sim_run.do with_vcs_env.sh README.md
 clean: ## Remove generated files while keeping helper scripts in this directory
 	find . -maxdepth 1 ! -name '.' $(foreach f,$(KEEP_FILES),! -name '$(f)') -exec rm -rf {} +
