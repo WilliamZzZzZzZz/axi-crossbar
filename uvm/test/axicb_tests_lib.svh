@@ -4,6 +4,7 @@
 `include "axicb_base_test.sv"
 `include "axicb_smoke_test.sv"
 `include "axicb_decerr_test.sv"
+`include "axicb_decerr_burst_test.sv"
 // `include "axiram_fixed_test.sv"
 // `include "axiram_unaligned_test.sv"
 // `include "axiram_narrow_test.sv"

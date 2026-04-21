@@ -5,6 +5,7 @@
 `include "axicb_base_virtual_sequence.sv"
 `include "axicb_smoke_virtual_sequence.sv"
 `include "axicb_decerr_virt_seq.sv"
+`include "axicb_decerr_burst_vseq.sv"
 // `include "axiram_fixed_virtual_sequence.sv"
 // `include "axiram_unaligned_virtual_sequence.sv"
 // `include "axiram_narrow_virtual_sequence.sv"

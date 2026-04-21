@@ -11,6 +11,7 @@ class axi_master_single_sequence extends axi_base_sequence;
     rand burst_type_enum burst_type;
     rand burst_size_enum burst_size = BURST_SIZE_4BYTES;
     bit [1:0] write_bresp;
+    bit [ID_WIDTH - 1:0] write_bid;
     bit [1:0] read_rresp;
     bit [ID_WIDTH - 1:0] read_rid;
     bit read_rlast;
@@ -101,6 +102,7 @@ class axi_master_single_sequence extends axi_base_sequence;
         if(wait_for_response) begin
             get_response(rsp);
             write_bresp = rsp.bresp;
+            write_bid   = rsp.bid;
             //BRESP_CHECK
             if(write_bresp == OKAY)
                 `uvm_info(get_type_name(), $sformatf("write complete: ADDR:%0h, DATA:%0h", addr, data), UVM_LOW)

@@ -150,6 +150,9 @@ smoke: run ## Run the default smoke test
 decerr: TESTNAME = axicb_decerr_test
 decerr: run ## Run the DECERR-focused test
 
+decerr_burst: TESTNAME = axicb_decerr_burst_test
+decerr_burst: run ## Run the DECERR-burst test
+
 ##@ Regression
 TESTS ?= smoke
 
