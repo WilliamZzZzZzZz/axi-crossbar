@@ -340,36 +340,86 @@ generate
         assign int_axi_wvalid[m*M_COUNT +: M_COUNT] = (int_s_axi_wvalid[m] && w_select_valid_reg && !w_drop_reg) << w_select_reg;
         assign int_s_axi_wready[m] = int_axi_wready[w_select_reg*S_COUNT+m] || w_drop_reg;
 
+//===================================== original design ==============================================//
+        // // decode error handling
+        // reg [S_ID_WIDTH-1:0]  decerr_m_axi_bid_reg = {S_ID_WIDTH{1'b0}}, decerr_m_axi_bid_next;
+        // reg                   decerr_m_axi_bvalid_reg = 1'b0, decerr_m_axi_bvalid_next;
+        // wire                  decerr_m_axi_bready;
+
+        // assign m_rc_ready = !decerr_m_axi_bvalid_reg;
+
+        // always @* begin
+        //     decerr_m_axi_bid_next = decerr_m_axi_bid_reg;
+        //     decerr_m_axi_bvalid_next = decerr_m_axi_bvalid_reg;
+
+        //     if (decerr_m_axi_bvalid_reg) begin
+        //         if (decerr_m_axi_bready) begin
+        //             decerr_m_axi_bvalid_next = 1'b0;
+        //         end
+        //     end else if (m_rc_valid && m_rc_ready) begin
+        //         decerr_m_axi_bid_next = int_s_axi_awid[m*S_ID_WIDTH +: S_ID_WIDTH];
+        //         decerr_m_axi_bvalid_next = 1'b1;
+        //     end
+        // end
+
+        // always @(posedge clk) begin
+        //     if (rst) begin
+        //         decerr_m_axi_bvalid_reg <= 1'b0;
+        //     end else begin
+        //         decerr_m_axi_bvalid_reg <= decerr_m_axi_bvalid_next;
+        //     end
+
+        //     decerr_m_axi_bid_reg <= decerr_m_axi_bid_next;
+        // end
+//===================================== original design ==============================================//
+
+//===================================== new design ===================================================//
         // decode error handling
         reg [S_ID_WIDTH-1:0]  decerr_m_axi_bid_reg = {S_ID_WIDTH{1'b0}}, decerr_m_axi_bid_next;
+        reg                   decerr_m_axi_pending_reg = 1'b0, decerr_m_axi_pending_next;
         reg                   decerr_m_axi_bvalid_reg = 1'b0, decerr_m_axi_bvalid_next;
         wire                  decerr_m_axi_bready;
+        wire                  decerr_wlast_accept;
 
-        assign m_rc_ready = !decerr_m_axi_bvalid_reg;
+        assign decerr_wlast_accept =
+            w_drop_reg && int_s_axi_wvalid[m] && int_s_axi_wready[m] && int_s_axi_wlast[m];
+
+        assign m_rc_ready = !decerr_m_axi_pending_reg && !decerr_m_axi_bvalid_reg;
 
         always @* begin
             decerr_m_axi_bid_next = decerr_m_axi_bid_reg;
+            decerr_m_axi_pending_next = decerr_m_axi_pending_reg;
             decerr_m_axi_bvalid_next = decerr_m_axi_bvalid_reg;
 
             if (decerr_m_axi_bvalid_reg) begin
                 if (decerr_m_axi_bready) begin
                     decerr_m_axi_bvalid_next = 1'b0;
                 end
-            end else if (m_rc_valid && m_rc_ready) begin
+            end
+
+            if (m_rc_valid && m_rc_ready) begin
                 decerr_m_axi_bid_next = int_s_axi_awid[m*S_ID_WIDTH +: S_ID_WIDTH];
+                decerr_m_axi_pending_next = 1'b1;
+            end
+
+            if (!decerr_m_axi_bvalid_next && decerr_m_axi_pending_next && decerr_wlast_accept) begin
+                decerr_m_axi_pending_next = 1'b0;
                 decerr_m_axi_bvalid_next = 1'b1;
             end
         end
 
         always @(posedge clk) begin
             if (rst) begin
+                decerr_m_axi_pending_reg <= 1'b0;
                 decerr_m_axi_bvalid_reg <= 1'b0;
             end else begin
+                decerr_m_axi_pending_reg <= decerr_m_axi_pending_next;
                 decerr_m_axi_bvalid_reg <= decerr_m_axi_bvalid_next;
             end
 
             decerr_m_axi_bid_reg <= decerr_m_axi_bid_next;
         end
+//===================================== new design ===================================================//
 
         // write response arbitration
         wire [M_COUNT_P1-1:0] b_request;
