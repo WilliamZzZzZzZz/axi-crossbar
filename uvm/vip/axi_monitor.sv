@@ -76,11 +76,6 @@ class axi_monitor #(int VIF_ID_WIDTH = ID_WIDTH, bit IS_DOWNSTREAM = 0) extends 
                 //store current id
                 current_id = vif.monitor_cb.bid;
 
-                //AXI-PROTOCOL check
-                if(temp_tr.wbeat_finish == 0) begin
-                    `uvm_error(get_type_name(), "AXI WRITE VIOLATION! B response arrived before final WLAST handshake!")
-                end
-
                 //search for correct tr's index in queue
                 if(IS_DOWNSTREAM) begin
                     q_index = write_trans_queue.find_index() with (
@@ -96,6 +91,11 @@ class axi_monitor #(int VIF_ID_WIDTH = ID_WIDTH, bit IS_DOWNSTREAM = 0) extends 
                 if(q_index.size() > 0) begin
                     int idx = q_index[0];
                     temp_tr = write_trans_queue[idx];
+
+                    //AXI-PROTOCOL check
+                    if(temp_tr.wbeat_finish == 0) begin
+                        `uvm_error(get_type_name(), "AXI WRITE VIOLATION! B response arrived before final WLAST handshake!")
+                    end
 
                     if(IS_DOWNSTREAM) begin
                         temp_tr.m_bid = vif.monitor_cb.bid;
@@ -136,6 +136,7 @@ class axi_monitor #(int VIF_ID_WIDTH = ID_WIDTH, bit IS_DOWNSTREAM = 0) extends 
                         end
                         temp_tr.wdata[temp_tr.current_wbeat_count] = vif.monitor_cb.wdata;
                         temp_tr.wstrb[temp_tr.current_wbeat_count] = vif.monitor_cb.wstrb;
+                        temp_tr.current_wbeat_count++;
 
                         if(vif.monitor_cb.wlast)
                             temp_tr.wbeat_finish = 1;
