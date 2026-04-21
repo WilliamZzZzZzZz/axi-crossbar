@@ -71,42 +71,25 @@ class axi_monitor #(int VIF_ID_WIDTH = ID_WIDTH, bit IS_DOWNSTREAM = 0) extends 
                 //push unfinish tr into queue temporarily
                 write_trans_queue.push_back(tr);
             end
-            //==================== W channel ====================
-            if(vif.monitor_cb.wvalid && vif.monitor_cb.wready) begin
-                int w_idx[$];
-                w_idx = write_trans_queue.find_first_index() with (!item.wbeat_finish);
-                //focus on single transaction
-                if(w_idx.size() > 0) begin
-                    temp_tr = write_trans_queue[w_idx[0]];
-                    //this loop focus on single beat
-                    if(temp_tr.current_wbeat_count <= temp_tr.awlen) begin
-                        temp_tr.wdata[temp_tr.current_wbeat_count] = vif.monitor_cb.wdata;
-                        temp_tr.wstrb[temp_tr.current_wbeat_count] = vif.monitor_cb.wstrb;
-                        temp_tr.current_wbeat_count++;                        
-                        //check WLAST
-                        if(vif.monitor_cb.wlast) begin
-                            temp_tr.wbeat_finish = 1;
-                        end
-                    end
-                end
-                else begin
-                    `uvm_error(get_type_name(), "W channel: queue size < 0")
-                end
-            end
             //==================== B channel ====================
             if(vif.monitor_cb.bvalid && vif.monitor_cb.bready) begin
                 //store current id
                 current_id = vif.monitor_cb.bid;
 
+                //AXI-PROTOCOL check
+                if(temp_tr.wbeat_finish == 0) begin
+                    `uvm_error(get_type_name(), "AXI WRITE VIOLATION! B response arrived before final WLAST handshake!")
+                end
+
                 //search for correct tr's index in queue
                 if(IS_DOWNSTREAM) begin
                     q_index = write_trans_queue.find_index() with (
-                        item.m_awid == current_id && item.wbeat_finish && !item.b_finish
+                        item.m_awid == current_id && !item.b_finish
                     );
                 end
                 else begin
                     q_index = write_trans_queue.find_index() with (
-                        item.awid == current_id[ID_WIDTH - 1:0] && item.wbeat_finish && !item.b_finish
+                        item.awid == current_id[ID_WIDTH - 1:0] && !item.b_finish
                     );                    
                 end
 
@@ -127,12 +110,41 @@ class axi_monitor #(int VIF_ID_WIDTH = ID_WIDTH, bit IS_DOWNSTREAM = 0) extends 
                     temp_tr.buser     = vif.monitor_cb.buser;
                     temp_tr.b_finish  = 1;
                     //a tran via 3 channels' write operations finally completed, full info now stroed in temp_tr
-                    item_observed_port.write(temp_tr);
-                    write_trans_queue.delete(idx);
+                    try_boardcast_txn(idx);
                 end
                 else begin
                     `uvm_error(get_type_name(), $sformatf(
                         "B channel: bid=0x%0h not found in queue", current_id))
+                end
+            end
+            //==================== W channel ====================
+            if(vif.monitor_cb.wvalid && vif.monitor_cb.wready) begin
+                int w_idx[$];
+                w_idx = write_trans_queue.find_first_index() with (!item.wbeat_finish);
+                //focus on single transaction
+                if(w_idx.size() > 0) begin
+                    int idx = w_idx[0];
+                    bit expected_wlast;
+                    temp_tr = write_trans_queue[w_idx[0]];
+
+                    if(temp_tr.current_wbeat_count > int'(temp_tr.awlen)) begin
+                        `uvm_error(get_type_name(), "W channel too many beats: beat number > awlen + 1")
+                    end else begin
+                        expected_wlast = (temp_tr.current_wbeat_count == int'(temp_tr.awlen));
+                        if(vif.monitor_cb.wlast !== expected_wlast) begin
+                            `uvm_error(get_type_name(), "WLAST mismatch!")
+                        end
+                        temp_tr.wdata[temp_tr.current_wbeat_count] = vif.monitor_cb.wdata;
+                        temp_tr.wstrb[temp_tr.current_wbeat_count] = vif.monitor_cb.wstrb;
+
+                        if(vif.monitor_cb.wlast)
+                            temp_tr.wbeat_finish = 1;
+
+                        try_boardcast_txn(idx);
+                    end
+                end
+                else begin
+                    `uvm_error(get_type_name(), "W channel: W beat observed but no unfinished AW transaction exists")
                 end
             end
         end
@@ -227,6 +239,19 @@ class axi_monitor #(int VIF_ID_WIDTH = ID_WIDTH, bit IS_DOWNSTREAM = 0) extends 
             end
         end
     endtask
+
+    local function void try_boardcast_txn(int idx);
+        axi_transaction done_tr;
+        if(idx < 0 || idx >= write_trans_queue.size()) begin
+            `uvm_error(get_type_name(), $sformatf("try_emit_write_transaction invalid idx=%0d queue_size=%0d", idx, write_trans_queue.size()))
+            return;
+        end
+        done_tr = write_trans_queue[idx];
+        if(done_tr.wbeat_finish && done_tr.b_finish) begin
+            item_observed_port.write(done_tr);
+            write_trans_queue.delete(idx);
+        end
+    endfunction
 
     //reset signal assert, boardcast partial transaction
     virtual task monitor_reset();
