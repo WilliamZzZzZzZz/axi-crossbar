@@ -19,7 +19,7 @@ class axicb_decerr_virt_seq extends axicb_base_virtual_sequence;
         `uvm_info(get_type_name(), "========== decerr_test_end ============", UVM_LOW)
     endtask
 
-    virtual task decerr_burst_test(int unsigned mst_idx,trans_type_enum txn_type, burst_len_enum burst_len);
+    virtual task decerr_test(int unsigned mst_idx,trans_type_enum txn_type, burst_len_enum burst_len);
         bit [31:0] decerr_addr;
         bit downstream_leak = 0;
         bit monitor_enable  = 1;

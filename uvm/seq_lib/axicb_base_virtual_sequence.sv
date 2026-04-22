@@ -58,20 +58,23 @@ class axicb_base_virtual_sequence extends uvm_sequence;
         end
     endfunction  
 
-    virtual function void compare_data(bit[31:0] wr[], bit[31:0] rd[]);
+    virtual function bit compare_data(bit[31:0] wr[], bit[31:0] rd[]);
         if(wr.size() != rd.size()) begin
             `uvm_error("CMP-SIZE", $sformatf("wr size(%0d) != rd size(%0d)", 
                         wr.size(), rd.size()))
-            return;
+            return 0;
         end
         foreach(wr[i]) begin
             if(wr[i] === rd[i])
                 `uvm_info("CMP-PASS", $sformatf("beat[%0d] MATCH: wr=0x%08x rd=0x%08x", 
                         i, wr[i], rd[i]), UVM_LOW)
-            else
+            else begin
                 `uvm_error("CMP-FAIL", $sformatf("beat[%0d] MISMATCH: wr=0x%08x rd=0x%08x", 
                         i, wr[i], rd[i]))
+                return 0;
+            end
         end
+        return 1;
     endfunction
 
     task wait_cycles(int n);

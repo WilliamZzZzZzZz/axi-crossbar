@@ -1,2 +1,44 @@
 .DS_Store
 **/.DS_Store
+
+# ============================================================
+# VCS / DVE / Verdi 仿真产物 (make clean 后不保留的文件)
+# ============================================================
+
+# VCS vlogan 分析数据库
+uvm/sim/AN.DB/
+
+# VCS elab 生成的 C 源码及编译中间件
+uvm/sim/csrc/
+
+# VCS 64-bit 运行时库缓存
+uvm/sim/64/
+
+# make 输出目录 (simv 可执行、日志、覆盖率数据库等)
+uvm/sim/out/
+
+# VCS 自动生成的 C 头文件
+uvm/sim/vc_hdrs.h
+
+# UCli 会话按键记录
+uvm/sim/ucli.key
+
+# 事务数据库日志
+uvm/sim/tr_db.log
+
+# DVE 波形文件及会话目录
+uvm/sim/*.vpd
+uvm/sim/inter.vpd
+uvm/sim/DVEfiles/
+
+# Verdi / novas 波形及配置文件
+uvm/sim/*.fsdb
+uvm/sim/novas.rc
+uvm/sim/novas.conf
+uvm/sim/*.conf
+
+# URG 覆盖率 HTML 报告
+uvm/sim/urgReport/
+
+# 独立的覆盖率数据库 (防止生成在 out/ 之外)
+uvm/sim/*.vdb
