@@ -12,6 +12,7 @@ class axicb_single_read_sequence extends axicb_base_sequence;
     rand burst_size_enum burst_size;
 
     bit [31:0] every_beat_data[];   //store every beat's data
+    bit [1:0]  every_beat_rresp[];
 
     bit wait_for_response = 1;
     bit expect_decerr = 0;
@@ -47,8 +48,9 @@ class axicb_single_read_sequence extends axicb_base_sequence;
         rlast = axi_single.read_rlast;
 
         if(wait_for_response) begin
-            every_beat_data = axi_single.every_beat_data;
-            data            = axi_single.data;
+            every_beat_data  = axi_single.every_beat_data;
+            data             = axi_single.data;
+            every_beat_rresp = axi_single.every_beat_rresp;
         end
 
         `uvm_info(get_type_name(), "exiting...", UVM_LOW)

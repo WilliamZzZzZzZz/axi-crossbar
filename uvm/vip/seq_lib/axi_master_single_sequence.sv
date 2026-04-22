@@ -26,6 +26,7 @@ class axi_master_single_sequence extends axi_base_sequence;
 
     bit [DATA_WIDTH - 1:0] every_beat_data[];   //store every beat's data
     bit [STRB_WIDTH - 1:0] every_beat_wstrb[];
+    bit [1:0]              every_beat_rresp[];
 
     //control sequence whether blocking wait for driver's response
     //default-mode:  1(blocking)
@@ -149,8 +150,10 @@ class axi_master_single_sequence extends axi_base_sequence;
             read_rlast = rsp.rlast;
 
             every_beat_data = new[actual_beats];
+            every_beat_rresp = new[actual_beats];
             foreach(every_beat_data[i]) begin
                 every_beat_data[i] = rsp.rdata[i];
+                every_beat_rresp[i] = rsp.rresp[i];
             end
             data = every_beat_data[0];
             //RRESP_CHECK

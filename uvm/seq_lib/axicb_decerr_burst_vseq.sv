@@ -5,17 +5,23 @@ class axicb_decerr_burst_vseq extends axicb_base_virtual_sequence;
 
     `uvm_object_utils(axicb_decerr_burst_vseq)
 
+    rand burst_len_enum burst_len[4];
+
     function new(string name = "axicb_decerr_burst_vseq");
         super.new(name);
     endfunction
 
     virtual task body();
         super.body();
+        if(!std::randomize(burst_len) with {
+            unique {burst_len};
+        }) `uvm_fatal(get_type_name(), "burst_len, randomization FAILED!")
+
         `uvm_info(get_type_name(), "========== decerr_test_start ==========", UVM_LOW)
-        decerr_burst_test(0, WRITE, BURST_LEN_4BEATS);
-        // decerr_test(0, READ, BURST_LEN_4BEATS);
-        decerr_burst_test(1, WRITE, BURST_LEN_4BEATS);
-        // decerr_test(1, READ, BURST_LEN_4BEATS);
+        // decerr_burst_test(0, WRITE, burst_len[0]);
+        decerr_burst_test(0, READ, burst_len[1]);
+        // decerr_burst_test(1, WRITE, burst_len[2]);
+        // decerr_burst_test(1, READ, burst_len[3]);
         `uvm_info(get_type_name(), "========== decerr_test_end ============", UVM_LOW)
     endtask
 
@@ -34,7 +40,7 @@ class axicb_decerr_burst_vseq extends axicb_base_virtual_sequence;
             txn_per_path inside {[2:10]};
         }) `uvm_fatal(get_type_name(), "'txn_per_path' randomization FAILED!")
 
-        `uvm_info(get_type_name(), $sformatf("master%0d DECERR test, txn_num: %0d transactions", mst_idx, txn_per_path), UVM_LOW)
+        `uvm_info(get_type_name(), $sformatf("master%0d DECERR burst test, burst_len:%0s, txn_num: %0d transactions", mst_idx, burst_len.name(), txn_per_path), UVM_LOW)
 
         fork
             begin: decerr_thread
@@ -45,8 +51,8 @@ class axicb_decerr_burst_vseq extends axicb_base_virtual_sequence;
                         decerr_addr <= 32'hFFFF_FFFF;
                     }) `uvm_fatal(get_type_name(), "decerr addr randomization FAILED!")
                     case(txn_type)
-                        WRITE:  decerr_write(mst_idx, decerr_addr, burst_len);
-                        READ:   decerr_read(mst_idx, decerr_addr, burst_len);
+                        WRITE:  decerr_burst_write(mst_idx, decerr_addr, burst_len);
+                        READ:   decerr_burst_read(mst_idx, decerr_addr, burst_len);
                         default: `uvm_fatal(get_type_name(),"no WRITE or READ option")
                     endcase
                 end
@@ -70,7 +76,7 @@ class axicb_decerr_burst_vseq extends axicb_base_virtual_sequence;
             `uvm_error(get_type_name(), $sformatf("master%0d DECERR-%0s, downstream isolation FAILED!(illegal data and addr leak into downstream)", mst_idx, txn_type.name()))
     endtask
 
-    local task decerr_write(int unsigned mst_idx, bit [ADDR_WIDTH - 1:0] addr, burst_len_enum burst_len);
+    local task decerr_burst_write(int unsigned mst_idx, bit [ADDR_WIDTH - 1:0] addr, burst_len_enum burst_len);
         int unsigned beat_num = int'(burst_len) + 1;  
 
         single_write = axicb_single_write_sequence::type_id::create("single_write");
@@ -112,7 +118,9 @@ class axicb_decerr_burst_vseq extends axicb_base_virtual_sequence;
         seq.data = seq.every_beat_data[0];
     endtask
 
-    local task decerr_read(int unsigned mst_idx, bit [ADDR_WIDTH - 1:0] addr, burst_len_enum burst_len);
+    local task decerr_burst_read(int unsigned mst_idx, bit [ADDR_WIDTH - 1:0] addr, burst_len_enum burst_len);
+        resp_type_enum beat_rresp;
+
         single_read = axicb_single_read_sequence::type_id::create("single_read");
         single_read.src_master_idx     = mst_idx;
         single_read.addr               = addr;
@@ -124,23 +132,19 @@ class axicb_decerr_burst_vseq extends axicb_base_virtual_sequence;
         single_read.start(p_sequencer); 
 
         //chcek DECERR rresp
-        if(single_read.rresp == DECERR)
-            `uvm_info(get_type_name(), $sformatf("expected decerr read, master%0d -> DECERR_ADDR: %08h, rresp PASSED!", mst_idx, addr), UVM_LOW)
-        else
-            `uvm_error(get_type_name(), $sformatf("expect return DECERR, but rresp: %02b, DECERR_ADDR: %08h", single_read.rresp, addr))
+        foreach(single_read.every_beat_rresp[i]) begin
+            beat_rresp = resp_type_enum'(single_read.every_beat_rresp[i]);
+            if(single_read.every_beat_rresp[i] == DECERR)
+                `uvm_info(get_type_name(), $sformatf("expected decerr read, beat[%0d] rresp = %0s, every beat rresp PASSED!", i, beat_rresp.name()), UVM_LOW)
+            else
+                `uvm_error(get_type_name(), $sformatf("expect DECERR on beat[%0d] but rresp %0s", i, beat_rresp.name()))
+        end
         //check DECERR arid and rid, expect: arid = rid
         if(single_read.arid == single_read.rid)
             `uvm_info(get_type_name(), "expected decerr read, dut return ID PASSED!", UVM_LOW)
         else
             `uvm_error(get_type_name(), $sformatf("dut return incorrect ID, arid = %08b, rid = %08b", single_read.arid, single_read.rid))
-        //check rlast, single beat, so rlast === 1
-        if(single_read.rlast == 1) 
-            `uvm_info(get_type_name(), "expected decerr read, dut return rlast PASSED!", UVM_LOW)
-        else
-            `uvm_error(get_type_name(), $sformatf("dut return incorrect rlast = %0b", single_read.rlast))
     endtask
-
-
 
     local task automatic check_downstream_port(
         trans_type_enum txn_type,

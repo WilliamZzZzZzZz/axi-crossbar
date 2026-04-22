@@ -110,9 +110,7 @@ class axi_master_read_driver extends uvm_object;
                 tr.rresp[i] = vif.master_cb.rresp;
                 tr.rid      = vif.master_cb.rid;
                 rlast_snapshot = vif.master_cb.rlast;   //before handshake, task a snapshot of rlast, record rlast status
-
                 //after handshake, slave all signals would turn 0, so snapshot of rlast before handshake is important
-                @(vif.master_cb);
                 vif.master_cb.rready <= 1'b0;
 
                 i++;
