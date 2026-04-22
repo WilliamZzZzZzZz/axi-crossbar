@@ -18,10 +18,10 @@ class axicb_decerr_burst_vseq extends axicb_base_virtual_sequence;
         }) `uvm_fatal(get_type_name(), "burst_len, randomization FAILED!")
 
         `uvm_info(get_type_name(), "========== decerr_test_start ==========", UVM_LOW)
-        // decerr_burst_test(0, WRITE, burst_len[0]);
+        decerr_burst_test(0, WRITE, burst_len[0]);
         decerr_burst_test(0, READ, burst_len[1]);
-        // decerr_burst_test(1, WRITE, burst_len[2]);
-        // decerr_burst_test(1, READ, burst_len[3]);
+        decerr_burst_test(1, WRITE, burst_len[2]);
+        decerr_burst_test(1, READ, burst_len[3]);
         `uvm_info(get_type_name(), "========== decerr_test_end ============", UVM_LOW)
     endtask
 

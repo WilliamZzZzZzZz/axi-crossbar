@@ -78,8 +78,8 @@ class axi_transaction extends uvm_sequence_item;
     //--------------------------------------------------------------------------
     // AXI4 maximum allow awlen = 256 burst, but most pratically only use for short burst
     constraint c_len {
-        awlen inside {[0:15]};  // 1-16 beats
-        arlen inside {[0:15]};
+        awlen inside {[0:255]};  // 1-16 beats
+        arlen inside {[0:255]};
     }
     
     // maximum burst size is 8 bytes, but DUT's DATA_WIDTH = 32bits,  which means maximum size is 4 bytes

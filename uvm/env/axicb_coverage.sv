@@ -106,7 +106,7 @@ class axicb_coverage extends uvm_component;
         }
         BURST_LEN: coverpoint burst_len {
             bins beat_single = {BURST_LEN_SINGLE};
-            bins beats_2     = {BURST_LEN_DOUBLE};
+            bins beats_2     = {BURST_LEN_2BEATS};
             bins beats_4     = {BURST_LEN_4BEATS};
             bins beats_8     = {BURST_LEN_8BEATS};
             bins beats_16    = {BURST_LEN_16BEATS};
@@ -135,7 +135,7 @@ class axicb_coverage extends uvm_component;
         }
         CP_LEN: coverpoint burst_len {
             bins beat_single = {BURST_LEN_SINGLE};
-            bins beats_2     = {BURST_LEN_DOUBLE};
+            bins beats_2     = {BURST_LEN_2BEATS};
             bins beats_4     = {BURST_LEN_4BEATS};
             bins beats_8     = {BURST_LEN_8BEATS};
             bins beats_16    = {BURST_LEN_16BEATS};

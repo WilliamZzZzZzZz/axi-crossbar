@@ -21,15 +21,19 @@
     } trans_type_enum;
 
     typedef enum bit[7:0] {
-        BURST_LEN_SINGLE  = 8'b00000000,
-        BURST_LEN_DOUBLE  = 8'b00000001,
-        BURST_LEN_3BEATS  = 8'b00000010,
-        BURST_LEN_4BEATS  = 8'b00000011,
-        BURST_LEN_5BEATS  = 8'b00000100,
-        BURST_LEN_6BEATS  = 8'b00000101,
-        BURST_LEN_7BEATS  = 8'b00000110,
-        BURST_LEN_8BEATS  = 8'b00000111,
-        BURST_LEN_16BEATS = 8'b00001111
+        BURST_LEN_SINGLE   = 8'b00000000,
+        BURST_LEN_2BEATS   = 8'b00000001,
+        BURST_LEN_3BEATS   = 8'b00000010,
+        BURST_LEN_4BEATS   = 8'b00000011,
+        BURST_LEN_5BEATS   = 8'b00000100,
+        BURST_LEN_6BEATS   = 8'b00000101,
+        BURST_LEN_7BEATS   = 8'b00000110,
+        BURST_LEN_8BEATS   = 8'b00000111,
+        BURST_LEN_16BEATS  = 8'b00001111,
+        BURST_LEN_32BEATS  = 8'b00011111,
+        BURST_LEN_64BEATS  = 8'b00111111,
+        BURST_LEN_128BEATS = 8'b01111111,
+        BURST_LEN_256BEATS = 8'b11111111
     } burst_len_enum;
 
     typedef enum bit[2:0] {
