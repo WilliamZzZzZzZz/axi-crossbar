@@ -12,14 +12,14 @@ class axicb_decerr_virt_seq extends axicb_base_virtual_sequence;
     virtual task body();
         super.body();
         `uvm_info(get_type_name(), "========== decerr_test_start ==========", UVM_LOW)
-        // decerr_test(0, WRITE);
-        // decerr_test(0, READ);
-        // decerr_test(1, WRITE);
-        // decerr_test(1, READ);
+        decerr_test(0, WRITE);
+        decerr_test(0, READ);
+        decerr_test(1, WRITE);
+        decerr_test(1, READ);
         `uvm_info(get_type_name(), "========== decerr_test_end ============", UVM_LOW)
     endtask
 
-    virtual task decerr_test(int unsigned mst_idx,trans_type_enum txn_type, burst_len_enum burst_len);
+    virtual task decerr_test(int unsigned mst_idx,trans_type_enum txn_type);
         bit [31:0] decerr_addr;
         bit downstream_leak = 0;
         bit monitor_enable  = 1;
@@ -45,8 +45,8 @@ class axicb_decerr_virt_seq extends axicb_base_virtual_sequence;
                         decerr_addr <= 32'hFFFF_FFFF;
                     }) `uvm_fatal(get_type_name(), "decerr addr randomization FAILED!")
                     case(txn_type)
-                        WRITE:  decerr_write(mst_idx, decerr_addr, burst_len);
-                        READ:   decerr_read(mst_idx, decerr_addr, burst_len);
+                        WRITE:  decerr_write(mst_idx, decerr_addr);
+                        READ:   decerr_read(mst_idx, decerr_addr);
                         default: `uvm_fatal(get_type_name(),"no WRITE or READ option")
                     endcase
                 end
@@ -71,7 +71,7 @@ class axicb_decerr_virt_seq extends axicb_base_virtual_sequence;
 
     endtask
 
-    local task decerr_write(int unsigned mst_idx, bit [ADDR_WIDTH - 1:0] addr, burst_len_enum burst_len);
+    local task decerr_write(int unsigned mst_idx, bit [ADDR_WIDTH - 1:0] addr);
         bit [DATA_WIDTH - 1:0] wr_data;
         //data randomization
         if(!std::randomize(wr_data)) 
@@ -81,7 +81,7 @@ class axicb_decerr_virt_seq extends axicb_base_virtual_sequence;
         single_write.src_master_idx     = mst_idx;
         single_write.addr               = addr;
         single_write.data               = wr_data;
-        single_write.burst_len          = burst_len;
+        single_write.burst_len          = BURST_LEN_SINGLE;
         single_write.burst_type         = INCR;
         single_write.burst_size         = BURST_SIZE_4BYTES;
         single_write.every_beat_data    = new[1];
@@ -97,11 +97,11 @@ class axicb_decerr_virt_seq extends axicb_base_virtual_sequence;
             `uvm_error(get_type_name(), $sformatf("expect return DECERR, but bresp: %02b, DECERR_ADDR: %08h", single_write.bresp, addr)) 
     endtask
 
-    local task decerr_read(int unsigned mst_idx, bit [ADDR_WIDTH - 1:0] addr, burst_len_enum burst_len);
+    local task decerr_read(int unsigned mst_idx, bit [ADDR_WIDTH - 1:0] addr);
         single_read = axicb_single_read_sequence::type_id::create("single_read");
         single_read.src_master_idx     = mst_idx;
         single_read.addr               = addr;
-        single_read.burst_len          = burst_len;
+        single_read.burst_len          = BURST_LEN_SINGLE;
         single_read.burst_type         = INCR;
         single_read.burst_size         = BURST_SIZE_4BYTES;
         single_read.wait_for_response  = 1;
