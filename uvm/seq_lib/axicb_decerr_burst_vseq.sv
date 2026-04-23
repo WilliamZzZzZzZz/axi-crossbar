@@ -1,7 +1,7 @@
 `ifndef AXICB_DECERR_BURST_VSEQ_SV
 `define AXICB_DECERR_BURST_VSEQ_SV
 
-class axicb_decerr_burst_vseq extends axicb_base_virtual_sequence;
+class axicb_decerr_burst_vseq extends axicb_base_vseq;
 
     `uvm_object_utils(axicb_decerr_burst_vseq)
 

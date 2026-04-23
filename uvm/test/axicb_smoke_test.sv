@@ -14,7 +14,7 @@ class axicb_smoke_test extends axicb_base_test;
     endfunction
 
     task run_phase(uvm_phase phase);
-        axicb_smoke_virtual_sequence seq = axicb_smoke_virtual_sequence::type_id::create("seq");
+        axicb_smoke_vseq seq = axicb_smoke_vseq::type_id::create("seq");
         super.run_phase(phase);
 
         phase.raise_objection(this);

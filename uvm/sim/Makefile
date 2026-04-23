@@ -147,8 +147,8 @@ run: elab ## Run the simulation with the selected TESTNAME/SEED/GUI/COV knobs
 smoke: TESTNAME = axicb_smoke_test
 smoke: run ## Run the default smoke test
 
-decerr: TESTNAME = axicb_decerr_test
-decerr: run ## Run the DECERR-focused test
+decerr_single: TESTNAME = axicb_decerr_single_test
+decerr_single: run ## Run the DECERR-focused test
 
 decerr_burst: TESTNAME = axicb_decerr_burst_test
 decerr_burst: run ## Run the DECERR-burst test

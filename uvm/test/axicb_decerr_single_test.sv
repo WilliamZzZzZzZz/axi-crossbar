@@ -1,11 +1,11 @@
-`ifndef AXICB_DECERR_TEST_SV
-`define AXICB_DECERR_TEST_SV
+`ifndef AXICB_DECERR_SINGLE_TEST_SV
+`define AXICB_DECERR_SINGLE_TEST_SV
 
-class axicb_decerr_test extends axicb_base_test;
+class axicb_decerr_single_test extends axicb_base_test;
 
-    `uvm_component_utils(axicb_decerr_test)
+    `uvm_component_utils(axicb_decerr_single_test)
 
-    function new(string name = "axicb_decerr_test", uvm_component parent);
+    function new(string name = "axicb_decerr_single_test", uvm_component parent);
         super.new(name, parent);
     endfunction
 
@@ -14,7 +14,7 @@ class axicb_decerr_test extends axicb_base_test;
     endfunction
 
     task run_phase(uvm_phase phase);
-        axicb_decerr_virt_seq seq = axicb_decerr_virt_seq::type_id::create("seq");
+        axicb_decerr_single_vseq seq = axicb_decerr_single_vseq::type_id::create("seq");
         super.run_phase(phase);
 
         phase.raise_objection(this);

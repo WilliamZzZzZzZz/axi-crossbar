@@ -1,11 +1,11 @@
-`ifndef AXICB_DECERR_VIRT_SEQ_SV
-`define AXICB_DECERR_VIRT_SEQ_SV
+`ifndef AXICB_DECERR_SINGLE_VSEQ_SV
+`define AXICB_DECERR_SINGLE_VSEQ_SV
 
-class axicb_decerr_virt_seq extends axicb_base_virtual_sequence;
+class axicb_decerr_single_vseq extends axicb_base_vseq;
 
-    `uvm_object_utils(axicb_decerr_virt_seq)
+    `uvm_object_utils(axicb_decerr_single_vseq)
 
-    function new(string name = "axicb_decerr_virt_seq");
+    function new(string name = "axicb_decerr_single_vseq");
         super.new(name);
     endfunction
 

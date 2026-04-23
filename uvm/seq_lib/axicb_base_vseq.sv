@@ -1,8 +1,8 @@
-`ifndef AXICB_BASE_VIRTUAL_SEQUENCE_SV
-`define AXICB_BASE_VIRTUAL_SEQUENCE_SV
+`ifndef AXICB_BASE_VSEQ_SV
+`define AXICB_BASE_VSEQ_SV
 
-class axicb_base_virtual_sequence extends uvm_sequence;
-    `uvm_object_utils(axicb_base_virtual_sequence)
+class axicb_base_vseq extends uvm_sequence;
+    `uvm_object_utils(axicb_base_vseq)
 
     
     bit [31:0] wr_val[]; 
@@ -20,7 +20,7 @@ class axicb_base_virtual_sequence extends uvm_sequence;
 
     `uvm_declare_p_sequencer(axicb_virtual_sequencer)
 
-    function new(string name = "axicb_base_virtual_sequence");
+    function new(string name = "axicb_base_vseq");
         super.new(name);
     endfunction
 

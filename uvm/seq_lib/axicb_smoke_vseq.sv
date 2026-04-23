@@ -1,11 +1,11 @@
-`ifndef AXICB_SMOKE_VIRTUAL_SEQUENCE_SV
-`define AXICB_SMOKE_VIRTUAL_SEQUENCE_SV
+`ifndef AXICB_SMOKE_VSEQ_SV
+`define AXICB_SMOKE_VSEQ_SV
 
-class axicb_smoke_virtual_sequence extends axicb_base_virtual_sequence;
+class axicb_smoke_vseq extends axicb_base_vseq;
 
-    `uvm_object_utils(axicb_smoke_virtual_sequence)
+    `uvm_object_utils(axicb_smoke_vseq)
 
-    function new(string name = "axicb_smoke_virtual_sequence");
+    function new(string name = "axicb_smoke_vseq");
         super.new(name);
     endfunction
 
