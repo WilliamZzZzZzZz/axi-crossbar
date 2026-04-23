@@ -340,7 +340,7 @@ generate
         assign int_axi_wvalid[m*M_COUNT +: M_COUNT] = (int_s_axi_wvalid[m] && w_select_valid_reg && !w_drop_reg) << w_select_reg;
         assign int_s_axi_wready[m] = int_axi_wready[w_select_reg*S_COUNT+m] || w_drop_reg;
 
-//===================================== original design ==============================================//
+//===================================== original design (fix/decerr-burst-bresp-after-wlast) ==============================================//
         // // decode error handling
         // reg [S_ID_WIDTH-1:0]  decerr_m_axi_bid_reg = {S_ID_WIDTH{1'b0}}, decerr_m_axi_bid_next;
         // reg                   decerr_m_axi_bvalid_reg = 1'b0, decerr_m_axi_bvalid_next;
@@ -371,9 +371,9 @@ generate
 
         //     decerr_m_axi_bid_reg <= decerr_m_axi_bid_next;
         // end
-//===================================== original design ==============================================//
+//===================================== original design (fix/decerr-burst-bresp-after-wlast) ==============================================//
 
-//===================================== new design ===================================================//
+//===================================== new design (fix/decerr-burst-bresp-after-wlast) ===================================================//
         // decode error handling
         reg [S_ID_WIDTH-1:0]  decerr_m_axi_bid_reg = {S_ID_WIDTH{1'b0}}, decerr_m_axi_bid_next;
         reg                   decerr_m_axi_pending_reg = 1'b0, decerr_m_axi_pending_next;
@@ -419,7 +419,7 @@ generate
 
             decerr_m_axi_bid_reg <= decerr_m_axi_bid_next;
         end
-//===================================== new design ===================================================//
+//===================================== new design (fix/decerr-burst-bresp-after-wlast) ===================================================//
 
         // write response arbitration
         wire [M_COUNT_P1-1:0] b_request;
@@ -452,8 +452,19 @@ generate
         wire                   m_axi_bvalid_mux = ({decerr_m_axi_bvalid_reg, int_m_axi_bvalid} >> b_grant_encoded) & b_grant_valid;
         wire                   m_axi_bready_mux;
 
+        //========================================= new design (fix/decerr-routing-recovery) =======================================//
+        wire                   b_grant_decerr = b_grant_valid && (b_grant_encoded == M_COUNT_P1-1);
+        //========================================= new design (fix/decerr-routing-recovery) =======================================//
+
         assign int_axi_bready[m*M_COUNT +: M_COUNT] = (b_grant_valid && m_axi_bready_mux) << b_grant_encoded;
-        assign decerr_m_axi_bready = (b_grant_valid && m_axi_bready_mux) && (b_grant_encoded == M_COUNT_P1-1);
+
+        //========================================= original design =======================================//
+        // assign decerr_m_axi_bready = (b_grant_valid && m_axi_bready_mux) && (b_grant_encoded == M_COUNT_P1-1);
+        //========================================= original design =======================================//
+
+        //========================================= new design (fix/decerr-routing-recovery) =======================================//
+        assign decerr_m_axi_bready = m_axi_bready_mux && b_grant_decerr;
+        //========================================= new design (fix/decerr-routing-recovery) =======================================//
 
         for (n = 0; n < M_COUNT; n = n + 1) begin
             assign b_request[n] = int_axi_bvalid[n*S_COUNT+m] && !b_grant[n];
@@ -461,10 +472,16 @@ generate
         end
 
         assign b_request[M_COUNT_P1-1] = decerr_m_axi_bvalid_reg && !b_grant[M_COUNT_P1-1];
-        assign b_acknowledge[M_COUNT_P1-1] = b_grant[M_COUNT_P1-1] && decerr_m_axi_bvalid_reg && m_axi_bready_mux;
-
+        assign b_acknowledge[M_COUNT_P1-1] = b_grant[M_COUNT_P1-1] && decerr_m_axi_bvalid_reg && m_axi_bready_mux;        
         assign s_cpl_id = m_axi_bid_mux;
-        assign s_cpl_valid = m_axi_bvalid_mux && m_axi_bready_mux;
+
+        //========================================= original design =======================================//
+        //assign s_cpl_valid = m_axi_bvalid_mux && m_axi_bready_mux;
+        //========================================= original design =======================================//
+
+        //========================================= new design (fix/decerr-routing-recovery) =======================================//
+        assign s_cpl_valid = m_axi_bvalid_mux && m_axi_bready_mux && !b_grant_decerr;
+        //========================================= new design (fix/decerr-routing-recovery) =======================================//
 
         // S side register
         axi_register_wr #(
@@ -643,7 +660,7 @@ generate
             w_select_reg <= w_select_next;
         end
 
-//======================================== original design part ===================================================//
+//======================================== original design (fix_dut_xresp_outstanding_bug) ===================================================//
         // write response forwarding
         // wire [CL_S_COUNT-1:0] b_select = m_axi_bid[n*M_ID_WIDTH +: M_ID_WIDTH] >> S_ID_WIDTH;
 
@@ -651,10 +668,10 @@ generate
         // assign int_m_axi_bready[n] = int_axi_bready[b_select*M_COUNT+n];
 
         // assign trans_complete = int_m_axi_bvalid[n] && int_m_axi_bready[n];
-//======================================== original design part ===================================================//
+//======================================== original design (fix_dut_xresp_outstanding_bug) ===================================================//
 
 
-//======================================== new design(fix bug) ====================================================//
+//======================================== new design (fix_dut_xresp_outstanding_bug) ====================================================//
         // write response forwarding
         // Only decode BID when BVALID is really asserted; otherwise BID is don't-care.
         wire b_resp_valid = (int_m_axi_bvalid[n] === 1'b1);
@@ -667,7 +684,7 @@ generate
         assign int_m_axi_bready[n] = b_resp_ready;
 
         assign trans_complete = b_resp_valid && b_resp_ready;
-//======================================== new design(fix bug) ====================================================//
+//======================================== new design (fix_dut_xresp_outstanding_bug) ====================================================//
 
         // M side register
         axi_register_wr #(
