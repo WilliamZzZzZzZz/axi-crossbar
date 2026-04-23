@@ -354,8 +354,19 @@ generate
         wire                   m_axi_rvalid_mux = ({decerr_m_axi_rvalid_reg, int_m_axi_rvalid} >> r_grant_encoded) & r_grant_valid;
         wire                   m_axi_rready_mux;
 
+        //========================================= new design (fix/decerr-routing-recovery) =======================================//
+        wire                   r_grant_decerr = r_grant_valid && (r_grant_encoded == M_COUNT_P1-1);
+        //========================================= new design (fix/decerr-routing-recovery) =======================================//
+
         assign int_axi_rready[m*M_COUNT +: M_COUNT] = (r_grant_valid && m_axi_rready_mux) << r_grant_encoded;
-        assign decerr_m_axi_rready = (r_grant_valid && m_axi_rready_mux) && (r_grant_encoded == M_COUNT_P1-1);
+
+        //========================================= original design (fix/decerr-routing-recovery) =======================================//
+        // assign decerr_m_axi_rready = (r_grant_valid && m_axi_rready_mux) && (r_grant_encoded == M_COUNT_P1-1);
+        //========================================= original design (fix/decerr-routing-recovery) =======================================//
+        
+        //========================================= new design (fix/decerr-routing-recovery) =======================================//
+        assign decerr_m_axi_rready = m_axi_rready_mux && r_grant_decerr;
+        //========================================= new design (fix/decerr-routing-recovery) =======================================//
 
         for (n = 0; n < M_COUNT; n = n + 1) begin
             assign r_request[n] = int_axi_rvalid[n*S_COUNT+m] && !r_grant[n];
@@ -366,7 +377,14 @@ generate
         assign r_acknowledge[M_COUNT_P1-1] = r_grant[M_COUNT_P1-1] && decerr_m_axi_rvalid_reg && decerr_m_axi_rlast_reg && m_axi_rready_mux;
 
         assign s_cpl_id = m_axi_rid_mux;
-        assign s_cpl_valid = m_axi_rvalid_mux && m_axi_rready_mux && m_axi_rlast_mux;
+
+        //========================================= original design (fix/decerr-routing-recovery) =======================================//
+        // assign s_cpl_valid = m_axi_rvalid_mux && m_axi_rready_mux && m_axi_rlast_mux;
+        //========================================= original design (fix/decerr-routing-recovery) =======================================//
+
+        //========================================= new design (fix/decerr-routing-recovery) =======================================//
+        assign s_cpl_valid = m_axi_rvalid_mux && m_axi_rready_mux && m_axi_rlast_mux && !r_grant_decerr;
+        //========================================= new design (fix/decerr-routing-recovery) =======================================//        
 
         // S side register
         axi_register_rd #(
@@ -495,7 +513,7 @@ generate
 
         assign trans_start = s_axi_arvalid_mux && s_axi_arready_mux && a_grant_valid;
 
-//======================================== original design part ===================================================//
+//======================================== original design (fix_dut_xresp_outstanding_bug) ===================================================//
         // // read response forwarding
         // wire [CL_S_COUNT-1:0] r_select = m_axi_rid[n*M_ID_WIDTH +: M_ID_WIDTH] >> S_ID_WIDTH;
 
@@ -503,9 +521,9 @@ generate
         // assign int_m_axi_rready[n] = int_axi_rready[r_select*M_COUNT+n];
 
         // assign trans_complete = int_m_axi_rvalid[n] && int_m_axi_rready[n] && int_m_axi_rlast[n];
-//======================================== original design part ===================================================//
+//======================================== original design (fix_dut_xresp_outstanding_bug) ===================================================//
 
-//======================================== new design(fix bug) ====================================================//
+//======================================== new design (fix_dut_xresp_outstanding_bug) ====================================================//
         // read response forwarding
         // Only decode RID when RVALID is really asserted; otherwise RID/RLAST are don't-care.
         wire r_resp_valid = (int_m_axi_rvalid[n] === 1'b1);
@@ -519,7 +537,7 @@ generate
         assign int_m_axi_rready[n] = r_resp_ready;
 
         assign trans_complete = r_resp_valid && r_resp_ready && r_resp_last;
-//======================================== new design(fix bug) ====================================================//
+//======================================== new design (fix_dut_xresp_outstanding_bug) ====================================================//
 
         // M side register
         axi_register_rd #(
