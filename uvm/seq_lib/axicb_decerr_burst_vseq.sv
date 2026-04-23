@@ -1,7 +1,7 @@
 `ifndef AXICB_DECERR_BURST_VSEQ_SV
 `define AXICB_DECERR_BURST_VSEQ_SV
 
-class axicb_decerr_burst_vseq extends axicb_base_vseq;
+class axicb_decerr_burst_vseq extends axicb_decerr_base_vseq;
 
     `uvm_object_utils(axicb_decerr_burst_vseq)
 
@@ -108,21 +108,6 @@ class axicb_decerr_burst_vseq extends axicb_base_vseq;
             `uvm_info(get_type_name(), "expected decerr write, dut return ID PASSED!", UVM_LOW)
         else
             `uvm_error(get_type_name(), $sformatf("dut return incorrect ID, awid = %08b, bid = %08b", single_write.awid, single_write.bid))
-    endtask
-
-    local task randomize_write_data(axicb_single_write_sequence seq, int unsigned beat_num);
-        bit [DATA_WIDTH - 1:0] rand_data;
-        seq.every_beat_data  = new[beat_num];
-        seq.every_beat_wstrb = new[beat_num];
-
-        foreach(seq.every_beat_data[i]) begin
-            if(!std::randomize(rand_data))
-                `uvm_fatal(get_type_name(), "data randomization FAILED!")
-                
-            seq.every_beat_data[i]  = rand_data;
-            seq.every_beat_wstrb[i] = 4'hF;
-        end
-        seq.data = seq.every_beat_data[0];
     endtask
 
     local task decerr_burst_read(int unsigned mst_idx, bit [ADDR_WIDTH - 1:0] addr, burst_len_enum burst_len);

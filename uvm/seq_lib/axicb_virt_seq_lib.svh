@@ -3,6 +3,7 @@
 
 `include "axicb_seq_lib.svh"
 `include "axicb_base_vseq.sv"
+`include "axicb_decerr_base_vseq.sv"
 `include "axicb_smoke_vseq.sv"
 `include "axicb_decerr_single_vseq.sv"
 `include "axicb_decerr_burst_vseq.sv"

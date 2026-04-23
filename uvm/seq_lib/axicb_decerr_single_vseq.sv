@@ -1,7 +1,7 @@
 `ifndef AXICB_DECERR_SINGLE_VSEQ_SV
 `define AXICB_DECERR_SINGLE_VSEQ_SV
 
-class axicb_decerr_single_vseq extends axicb_base_vseq;
+class axicb_decerr_single_vseq extends axicb_decerr_base_vseq;
 
     `uvm_object_utils(axicb_decerr_single_vseq)
 
@@ -125,31 +125,6 @@ class axicb_decerr_single_vseq extends axicb_base_vseq;
             `uvm_error(get_type_name(), $sformatf("dut return incorrect rlast = %0b", single_read.rlast))
     endtask
 
-    local task automatic check_downstream_port(
-        trans_type_enum txn_type,
-        virtual axi_if#(.ID_WIDTH(M_ID_WIDTH)) vif_slv,
-        ref bit downstream_leak
-    );
-        if(txn_type == WRITE) begin     //WRITE
-            //AWVALID check
-            if(vif_slv.awvalid === 1'b1) begin
-                `uvm_error(get_type_name(), $sformatf("downstream LEAK when decerr_write! awvalid=1, awaddr: %08h, awid: %09h", vif_slv.awaddr, vif_slv.awid))
-                downstream_leak = 1;
-            end
-            //WVALID check
-            if(vif_slv.wvalid === 1'b1) begin
-                `uvm_error(get_type_name(), $sformatf("downstream LEAK when decerr_write! wvalid=1, wdata: %08h", vif_slv.wdata))
-                downstream_leak = 1;
-            end
-        end
-        else begin      //READ
-            //ARVALID
-            if(vif_slv.arvalid === 1'b1) begin
-                `uvm_error(get_type_name(), $sformatf("downstream LEAK when decerr_read! arvalid=1, araddr: %08h, arid: %09h", vif_slv.araddr, vif_slv.arid))
-                downstream_leak = 1;
-            end
-        end
-    endtask
 
 endclass
 
