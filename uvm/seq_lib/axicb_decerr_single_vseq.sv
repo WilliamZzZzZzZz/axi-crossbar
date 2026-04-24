@@ -45,8 +45,22 @@ class axicb_decerr_single_vseq extends axicb_decerr_base_vseq;
                         decerr_addr <= 32'hFFFF_FFFF;
                     }) `uvm_fatal(get_type_name(), "decerr addr randomization FAILED!")
                     case(txn_type)
-                        WRITE:  decerr_write(mst_idx, decerr_addr);
-                        READ:   decerr_read(mst_idx, decerr_addr);
+                        WRITE:  do_decerr_write(
+                                                .mst_idx(mst_idx), 
+                                                .addr(decerr_addr), 
+                                                .burst_len(BURST_LEN_SINGLE), 
+                                                .burst_type(INCR), 
+                                                .burst_size(BURST_SIZE_4BYTES),
+                                                .tr_id('0)
+                        );
+                        READ:   do_decerr_read(
+                                                .mst_idx(mst_idx), 
+                                                .addr(decerr_addr),
+                                                .burst_len(BURST_LEN_SINGLE),
+                                                .burst_type(INCR),
+                                                .burst_size(BURST_SIZE_4BYTES),
+                                                .tr_id('0)
+                        );
                         default: `uvm_fatal(get_type_name(),"no WRITE or READ option")
                     endcase
                 end
@@ -70,61 +84,6 @@ class axicb_decerr_single_vseq extends axicb_decerr_base_vseq;
             `uvm_error(get_type_name(), $sformatf("master%0d DECERR-%0s, downstream isolation FAILED!(illegal data and addr leak into downstream)", mst_idx, txn_type.name()))
 
     endtask
-
-    local task decerr_write(int unsigned mst_idx, bit [ADDR_WIDTH - 1:0] addr);
-        bit [DATA_WIDTH - 1:0] wr_data;
-        //data randomization
-        if(!std::randomize(wr_data)) 
-            `uvm_fatal(get_type_name(), "data randomization FAILED!")    
-
-        single_write = axicb_single_write_sequence::type_id::create("single_write");
-        single_write.src_master_idx     = mst_idx;
-        single_write.addr               = addr;
-        single_write.data               = wr_data;
-        single_write.burst_len          = BURST_LEN_SINGLE;
-        single_write.burst_type         = INCR;
-        single_write.burst_size         = BURST_SIZE_4BYTES;
-        single_write.every_beat_data    = new[1];
-        single_write.every_beat_wstrb   = new[1];
-        single_write.wait_for_response  = 1;
-        single_write.expect_decerr      = 1;
-        single_write.start(p_sequencer);   
-
-        //check DECERR bresp
-        if(single_write.bresp == DECERR)
-            `uvm_info(get_type_name(), $sformatf("expected decerr write, master%0d -> DECERR_ADDR: %08h, bresp PASSED!", mst_idx, addr), UVM_LOW)
-        else 
-            `uvm_error(get_type_name(), $sformatf("expect return DECERR, but bresp: %02b, DECERR_ADDR: %08h", single_write.bresp, addr)) 
-    endtask
-
-    local task decerr_read(int unsigned mst_idx, bit [ADDR_WIDTH - 1:0] addr);
-        single_read = axicb_single_read_sequence::type_id::create("single_read");
-        single_read.src_master_idx     = mst_idx;
-        single_read.addr               = addr;
-        single_read.burst_len          = BURST_LEN_SINGLE;
-        single_read.burst_type         = INCR;
-        single_read.burst_size         = BURST_SIZE_4BYTES;
-        single_read.wait_for_response  = 1;
-        single_read.expect_decerr      = 1;
-        single_read.start(p_sequencer); 
-
-        //chcek DECERR rresp
-        if(single_read.rresp == DECERR)
-            `uvm_info(get_type_name(), $sformatf("expected decerr read, master%0d -> DECERR_ADDR: %08h, rresp PASSED!", mst_idx, addr), UVM_LOW)
-        else
-            `uvm_error(get_type_name(), $sformatf("expect return DECERR, but rresp: %02b, DECERR_ADDR: %08h", single_read.rresp, addr))
-        //check DECERR arid and rid, expect: arid = rid
-        if(single_read.arid == single_read.rid)
-            `uvm_info(get_type_name(), "expected decerr read, dut return ID PASSED!", UVM_LOW)
-        else
-            `uvm_error(get_type_name(), $sformatf("dut return incorrect ID, arid = %08b, rid = %08b", single_read.arid, single_read.rid))
-        //check rlast, single beat, so rlast === 1
-        if(single_read.rlast == 1) 
-            `uvm_info(get_type_name(), "expected decerr read, dut return rlast PASSED!", UVM_LOW)
-        else
-            `uvm_error(get_type_name(), $sformatf("dut return incorrect rlast = %0b", single_read.rlast))
-    endtask
-
 
 endclass
 

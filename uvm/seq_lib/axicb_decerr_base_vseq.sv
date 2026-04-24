@@ -30,12 +30,12 @@ class axicb_decerr_base_vseq extends axicb_base_vseq;
         burst_len_enum burst_len,
         burst_type_enum burst_type,
         burst_size_enum burst_size,
-        bit [ID_WIDTH - 1:0] tr_id,
-        output bit [1:0] bresp,
-        output bit [ID_WIDTH - 1:0] bid
+        bit [ID_WIDTH - 1:0] tr_id = '0
     );
-        int unsigned beat_num = int'(burst_len) + 1;
         axicb_single_write_sequence wr_seq;
+        int unsigned beat_num = int'(burst_len) + 1;
+        bit [1:0] bresp;
+        bit [ID_WIDTH - 1:0] bid;
 
         wr_seq = axicb_single_write_sequence::type_id::create("wr_seq");
         wr_seq.src_master_idx     = mst_idx;
@@ -67,14 +67,14 @@ class axicb_decerr_base_vseq extends axicb_base_vseq;
         burst_len_enum burst_len,
         burst_type_enum burst_type,
         burst_size_enum burst_size,
-        bit [ID_WIDTH - 1:0] tr_id,
-        output bit [1:0] rresp[],
-        output bit [ID_WIDTH - 1:0] rid,
-        output bit rlast
+        bit [ID_WIDTH - 1:0] tr_id = '0
     );
+        axicb_single_read_sequence rd_seq;    
         int unsigned beat_num = int'(burst_len) + 1;
         bit resp_ok = 1;
-        axicb_single_read_sequence rd_seq;
+        bit [1:0] rresp[];
+        bit [ID_WIDTH - 1:0] rid;
+        bit rlast;
 
         rd_seq = axicb_single_read_sequence::type_id::create("rd_seq");
         rd_seq.src_master_idx     = mst_idx;
