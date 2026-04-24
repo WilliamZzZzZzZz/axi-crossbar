@@ -156,6 +156,9 @@ decerr_burst: run ## Run the DECERR-burst test
 decerr_id: TESTNAME = axicb_decerr_id_test
 decerr_id: run ## Run the DECERR-id test
 
+decerr_dual_mst: TESTNAME = axicb_decerr_dual_mst_test
+decerr_dual_mst: run ## Run the DECERR-dual-master test
+
 ##@ Regression
 TESTS ?= smoke
 

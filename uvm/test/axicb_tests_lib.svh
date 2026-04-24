@@ -6,6 +6,7 @@
 `include "axicb_decerr_single_test.sv"
 `include "axicb_decerr_burst_test.sv"
 `include "axicb_decerr_id_test.sv"
+`include "axicb_decerr_dual_mst_test.sv"
 // `include "axiram_fixed_test.sv"
 // `include "axiram_unaligned_test.sv"
 // `include "axiram_narrow_test.sv"

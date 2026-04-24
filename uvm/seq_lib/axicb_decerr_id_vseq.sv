@@ -4,7 +4,7 @@
 class axicb_decerr_id_vseq extends axicb_decerr_base_vseq;
     `uvm_object_utils(axicb_decerr_id_vseq)
 
-    function new(string name = "axicb_decerr_base_vseq");
+    function new(string name = "axicb_decerr_id_vseq");
         super.new(name);
     endfunction
 
