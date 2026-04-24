@@ -17,7 +17,7 @@ class axicb_decerr_burst_vseq extends axicb_decerr_base_vseq;
             unique {burst_len};
         }) `uvm_fatal(get_type_name(), "burst_len, randomization FAILED!")
 
-        `uvm_info(get_type_name(), "========== decerr_test_start ==========", UVM_LOW)
+        `uvm_info(get_type_name(), "========== decerr_burst_test_start ==========", UVM_LOW)
         //decerr burst test
         decerr_burst_test(0, WRITE, burst_len[0]);
         decerr_burst_test(0, READ, burst_len[1]);
@@ -29,7 +29,7 @@ class axicb_decerr_burst_vseq extends axicb_decerr_base_vseq;
         after_decerr_test(1, 1);
         after_decerr_test(0, 0);
         after_decerr_test(0, 1);
-        `uvm_info(get_type_name(), "========== decerr_test_end ============", UVM_LOW)
+        `uvm_info(get_type_name(), "========== decerr_burst_test_end ============", UVM_LOW)
     endtask
 
     virtual task decerr_burst_test(int unsigned mst_idx,trans_type_enum txn_type, burst_len_enum burst_len);

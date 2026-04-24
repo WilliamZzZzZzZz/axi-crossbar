@@ -148,10 +148,13 @@ smoke: TESTNAME = axicb_smoke_test
 smoke: run ## Run the default smoke test
 
 decerr_single: TESTNAME = axicb_decerr_single_test
-decerr_single: run ## Run the DECERR-focused test
+decerr_single: run ## Run the DECERR-single test
 
 decerr_burst: TESTNAME = axicb_decerr_burst_test
 decerr_burst: run ## Run the DECERR-burst test
+
+decerr_id: TESTNAME = axicb_decerr_id_test
+decerr_id: run ## Run the DECERR-id test
 
 ##@ Regression
 TESTS ?= smoke
