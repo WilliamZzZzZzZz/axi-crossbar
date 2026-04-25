@@ -14,6 +14,8 @@ class axicb_decerr_dual_mst_vseq extends axicb_decerr_base_vseq;
 
         dual_mst_wr_wr();
         dual_mst_rd_rd();
+        one_decerr_one_legal_write();
+        one_decerr_one_legal_read();
 
         `uvm_info(get_type_name(), "========== decerr_dual_master_test_end ==========", UVM_LOW)
     endtask
@@ -117,6 +119,104 @@ class axicb_decerr_dual_mst_vseq extends axicb_decerr_base_vseq;
             `uvm_info(get_type_name(), $sformatf("dual master DECERR-RD downstream isolation PASSED!(%0d cycles monitored)", monitor_cycle_count), UVM_LOW)
         else
             `uvm_error(get_type_name(), "dual master DECERR-RD downstream isolation FAILED!(illegal write leaked into downstream)")
+    endtask
+
+    local task one_decerr_one_legal_write();
+        bit downstream_leak = 0;
+        bit monitor_enable  = 1;
+        int unsigned monitor_cycle_count = 0;
+
+        if(vif_mst00.arst === 1'b1) @(negedge vif_mst00.arst);
+        wait_cycles(5);
+        fork
+            begin: one_master_decerr_write_and_one_master_legal_write
+                fork
+                    do_decerr_write(
+                                    .mst_idx(0),
+                                    .addr(32'hDEAD_0000),
+                                    .burst_len(BURST_LEN_4BEATS),
+                                    .burst_type(INCR),
+                                    .burst_size(BURST_SIZE_4BYTES),
+                                    .tr_id(8'h01)
+                    );
+                    do_legal_write(
+                                    .mst_idx(1),
+                                    .addr(32'h0001_0000),
+                                    .burst_len(BURST_LEN_4BEATS),
+                                    .burst_type(INCR),
+                                    .burst_size(BURST_SIZE_4BYTES),
+                                    .tr_id(8'h02)
+                    );
+                join
+                monitor_enable = 0;
+            end
+
+            begin: leak_monitor_thread
+                while(monitor_enable) begin
+                    @(posedge vif_slv00.aclk);
+                    monitor_cycle_count++;
+                    if(monitor_enable == 0) break;
+                    if(vif_slv00.arst === 1'b1) continue;
+
+                    check_illegal_aw_leak(vif_slv00, downstream_leak);
+                    check_illegal_aw_leak(vif_slv01, downstream_leak);
+                end
+            end
+        join
+
+        if(downstream_leak == 0)
+            `uvm_info(get_type_name(), $sformatf("one master decerr and one master legal WRITE downstream isolation PASSED!(%0d cycles monitored)", monitor_cycle_count), UVM_LOW)
+        else
+            `uvm_error(get_type_name(), "one master decerr and one master legal WRITE isolation FAILED!(illegal write leaked into downstream)")
+    endtask
+
+    local task one_decerr_one_legal_read();
+        bit downstream_leak = 0;
+        bit monitor_enable  = 1;
+        int unsigned monitor_cycle_count = 0;
+
+        if(vif_mst00.arst === 1'b1) @(negedge vif_mst00.arst);
+        wait_cycles(5);
+        fork
+            begin: one_master_decerr_read_and_one_master_legal_read
+                fork
+                    do_decerr_read(
+                                    .mst_idx(0),
+                                    .addr(32'hDEAD_0000),
+                                    .burst_len(BURST_LEN_4BEATS),
+                                    .burst_type(INCR),
+                                    .burst_size(BURST_SIZE_4BYTES),
+                                    .tr_id(8'h05)
+                    );
+                    do_legal_read(
+                                    .mst_idx(1),
+                                    .addr(32'h0001_0000),
+                                    .burst_len(BURST_LEN_4BEATS),
+                                    .burst_type(INCR),
+                                    .burst_size(BURST_SIZE_4BYTES),
+                                    .tr_id(8'h06)
+                    );
+                join
+                monitor_enable = 0;
+            end
+
+            begin: leak_monitor_thread
+                while(monitor_enable) begin
+                    @(posedge vif_slv00.aclk);
+                    monitor_cycle_count++;
+                    if(monitor_enable == 0) break;
+                    if(vif_slv00.arst === 1'b1) continue;
+
+                    check_illegal_ar_leak(vif_slv00, downstream_leak);
+                    check_illegal_ar_leak(vif_slv01, downstream_leak);
+                end
+            end
+        join
+
+        if(downstream_leak == 0)
+            `uvm_info(get_type_name(), $sformatf("one master decerr and one master legal READ isolation PASSED!(%0d cycles monitored)", monitor_cycle_count), UVM_LOW)
+        else
+            `uvm_error(get_type_name(), "one master decerr and one master legal READ isolation FAILED!(illegal write leaked into downstream)")
     endtask
 
 endclass

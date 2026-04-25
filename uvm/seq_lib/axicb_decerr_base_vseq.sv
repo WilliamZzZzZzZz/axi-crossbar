@@ -138,6 +138,32 @@ class axicb_decerr_base_vseq extends axicb_base_vseq;
         end
     endtask
 
+    //under mixed test(1 master decerr and 1 master legal option)
+    //downstream should allow AW handshake while check unmapped address!
+    protected task automatic check_illegal_aw_leak(
+        virtual axi_if#(.ID_WIDTH(M_ID_WIDTH)) vif_slv,
+        ref bit illegal_addr_leak
+    );
+        if(vif_slv.awvalid === 1'b1) begin
+            if(vif_slv.awaddr >= 32'h0002_0000) begin
+                `uvm_error(get_type_name(), $sformatf("illegal AW leak into downstream! awaddr=%08h, awid=%09h", vif_slv.awaddr, vif_slv.awid))
+                illegal_addr_leak = 1;
+            end
+        end
+    endtask
+
+    protected task automatic check_illegal_ar_leak(
+        virtual axi_if#(.ID_WIDTH(M_ID_WIDTH)) vif_slv,
+        ref bit illegal_addr_leak
+    );
+        if(vif_slv.arvalid === 1'b1) begin
+            if(vif_slv.araddr >= 32'h0002_0000) begin
+                `uvm_error(get_type_name(), $sformatf("illegal AR leak into downstream! araddr=%08h, arid=%09h", vif_slv.araddr, vif_slv.arid))
+                illegal_addr_leak = 1;
+            end
+        end
+    endtask
+
 endclass
 
 `endif 
