@@ -174,6 +174,9 @@ decerr_id: run ## Run the DECERR-id test
 decerr_dual_mst: TESTNAME = axicb_decerr_dual_mst_test
 decerr_dual_mst: run ## Run the DECERR-dual-master test
 
+decode_full_range: TESTNAME = axicb_decode_full_range_test
+decode_full_range: run ## Run the DECODE-full-range test
+
 ##@ Regression
 TESTS ?= smoke
 

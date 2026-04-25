@@ -42,6 +42,7 @@ uvm/sim/*.conf
 
 # URG 覆盖率 HTML 报告
 uvm/sim/urgReport/
+cm.log
 
 # 独立的覆盖率数据库 (防止生成在 out/ 之外)
 uvm/sim/*.vdb
