@@ -5,7 +5,7 @@ SNPSLMD_LICENSE_FILE ?= $(LM_LICENSE_FILE)
 export LM_LICENSE_FILE
 export SNPSLMD_LICENSE_FILE
 .DEFAULT_GOAL := help
-.PHONY: help prepare comp elab run smoke decerr regress regress_cov mergecov dvecov verdicov htmlcov check checkinfo killdve clean
+.PHONY: help prepare comp elab run smoke decerr regress regress_cov mergecov dvecov verdicov htmlcov check checkinfo show killdve clean
 # --- Agent 仿真双重保险配置结束 ---
 
 help: ## Show grouped help for simulation targets
@@ -43,6 +43,8 @@ help: ## Show grouped help for simulation targets
 		print "  make regress COV=1"; \
 		print "  make check error"; \
 		print "  make checkinfo axicb_smoke_virtual_sequence"; \
+		print "  make show vseq"; \
+		print "  make show test"; \
 	}' $(MAKEFILE_LIST)
 
 #############################
@@ -90,6 +92,17 @@ CLASS := $(word 2,$(MAKECMDGOALS))
 CHECKINFO_EXTRA_GOALS := $(wordlist 2,$(words $(MAKECMDGOALS)),$(MAKECMDGOALS))
 .PHONY: $(CHECKINFO_EXTRA_GOALS)
 $(CHECKINFO_EXTRA_GOALS):
+	@:
+endif
+endif
+
+# Support: make show <vseq|test>
+ifeq ($(firstword $(MAKECMDGOALS)),show)
+ifneq ($(word 2,$(MAKECMDGOALS)),)
+SHOW_KIND := $(word 2,$(MAKECMDGOALS))
+SHOW_EXTRA_GOALS := $(wordlist 2,$(words $(MAKECMDGOALS)),$(MAKECMDGOALS))
+.PHONY: $(SHOW_EXTRA_GOALS)
+$(SHOW_EXTRA_GOALS):
 	@:
 endif
 endif
@@ -222,6 +235,24 @@ checkinfo: ## Grep UVM_INFO lines by class: make checkinfo <uvm_type_name>
 	@echo "Filtering UVM_INFO for [$(CLASS)] from $(RUN_LOG)"
 	@grep -n -E '^UVM_INFO .*\[$(CLASS)\]' "$(RUN_LOG)" || \
 	{ echo "No UVM_INFO lines found for [$(CLASS)] in $(RUN_LOG)"; exit 1; }
+
+show: ## Show generated lists: make show <vseq|test>
+	@if [ -z "$(strip $(SHOW_KIND))" ]; then \
+		echo "Usage: make show <vseq|test>"; \
+		exit 1; \
+	fi
+	@case "$(SHOW_KIND)" in \
+		vseq) \
+			grep -RhoE '[A-Za-z_][A-Za-z0-9_]*_vseq::type_id::create' ../test \
+				| sed 's/::type_id::create//' \
+				| sort -u ;; \
+		test) \
+			awk -F: '/^[A-Za-z0-9_.-]+:[[:space:]]*TESTNAME[[:space:]]*=/{print $$1}' $(MAKEFILE_LIST) ;; \
+		*) \
+			echo "Unknown show topic: $(SHOW_KIND)"; \
+			echo "Usage: make show <vseq|test>"; \
+			exit 1 ;; \
+	esac
 
 killdve: ## Kill all running DVE processes
 	@echo "Killing all DVE processes..."
