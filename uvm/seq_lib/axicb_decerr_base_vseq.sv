@@ -138,6 +138,13 @@ class axicb_decerr_base_vseq extends axicb_base_vseq;
         end
     endtask
 
+    protected task downstream_check_report(bit downstream_leak);
+        if(downstream_leak)
+            `uvm_error(get_type_name(), "DOWNSTREAM LEAK HAPPENED! more detail checkinfo 'axicb_decerr_base_vseq'")
+        else
+            `uvm_info(get_type_name(), "DOWNSTREAM CHECK PASSED!", UVM_LOW)
+    endtask
+
     //under mixed test(1 master decerr and 1 master legal option)
     //downstream should allow AW handshake while check unmapped address!
     protected task automatic check_illegal_aw_leak(

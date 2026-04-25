@@ -1,7 +1,9 @@
 # --- Agent 仿真双重保险配置开始 ---
 SHELL := /bin/bash
-export LM_LICENSE_FILE := 27000@localhost
-export SNPSLMD_LICENSE_FILE := 27000@localhost
+LM_LICENSE_FILE ?= 27000@localhost
+SNPSLMD_LICENSE_FILE ?= $(LM_LICENSE_FILE)
+export LM_LICENSE_FILE
+export SNPSLMD_LICENSE_FILE
 .DEFAULT_GOAL := help
 .PHONY: help prepare comp elab run smoke decerr regress regress_cov mergecov dvecov verdicov htmlcov check checkinfo killdve clean
 # --- Agent 仿真双重保险配置结束 ---
