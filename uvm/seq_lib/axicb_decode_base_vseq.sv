@@ -5,17 +5,20 @@ class axicb_decode_base_vseq extends axicb_base_vseq;
 
     `uvm_object_utils(axicb_decode_base_vseq)
 
-    bit [ADDR_WIDTH - 1:0] base_addr      = 32'h0000_0000;
-    bit [ADDR_WIDTH - 1:0] mid_addr       = 32'h0000_8000;
-    bit [ADDR_WIDTH - 1:0] boundary_addr  = 32'h0000_FFFC;
+    bit [ADDR_WIDTH - 1:0] s0_base_addr      = 32'h0000_0000;
+    bit [ADDR_WIDTH - 1:0] s0_mid_addr       = 32'h0000_8000;
+    bit [ADDR_WIDTH - 1:0] s0_boundary_addr  = 32'h0000_FFFC;
+    bit [ADDR_WIDTH - 1:0] s1_base_addr      = 32'h0001_0000;
+    bit [ADDR_WIDTH - 1:0] s1_mid_addr       = 32'h0001_8000;
+    bit [ADDR_WIDTH - 1:0] s1_boundary_addr  = 32'h0001_FFFC;
 
     function new(string name = "axicb_decode_base_vseq");
         super.new(name);
     endfunction
 
     protected task automatic upstream_decode_checker(
+        input int unsigned         mst_idx,        
         input trans_type_enum      txn_type,
-        input int unsigned         mst_idx,
         input bit [ID_WIDTH - 1:0] expected_id,
         ref   bit                  upstream_error
     );
@@ -60,8 +63,8 @@ class axicb_decode_base_vseq extends axicb_base_vseq;
     endtask
 
     protected task automatic downstream_decode_checker(
+        input int unsigned           mst_idx,        
         input trans_type_enum        txn_type,
-        input int unsigned           mst_idx,
         input bit [ADDR_WIDTH - 1:0] addr,
         input bit [ID_WIDTH - 1:0]   txn_id,
         ref   bit                    downstream_error 
