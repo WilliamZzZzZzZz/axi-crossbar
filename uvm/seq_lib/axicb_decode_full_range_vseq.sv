@@ -25,6 +25,16 @@ class axicb_decode_full_range_vseq extends axicb_decode_base_vseq;
             upstream_decode_checker(WRITE, 0, 8'b1111_1111, ups_decode_error);
             downstream_decode_checker(WRITE, 0, base_addr, 8'b1111_1111, downs_decode_error);
         join
+        fork
+            do_legal_write(0, mid_addr, BURST_LEN_SINGLE, INCR, BURST_SIZE_4BYTES, 8'b1010_1010);
+            upstream_decode_checker(WRITE, 0, 8'b1010_1010, ups_decode_error);
+            downstream_decode_checker(WRITE, 0, mid_addr, 8'b1010_1010, downs_decode_error);
+        join
+        fork
+            do_legal_write(0, boundary_addr, BURST_LEN_SINGLE, INCR, BURST_SIZE_4BYTES, 8'b0101_0101);
+            upstream_decode_checker(WRITE, 0, 8'b0101_0101, ups_decode_error);
+            downstream_decode_checker(WRITE, 0, boundary_addr, 8'b0101_0101, downs_decode_error);
+        join        
 
         //upstream check
         if(ups_decode_error)

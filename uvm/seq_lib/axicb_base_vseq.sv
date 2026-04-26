@@ -89,7 +89,7 @@ class axicb_base_vseq extends uvm_sequence;
         bid   = wr_seq.bid;
 
         if(bresp == OKAY)
-            `uvm_info(get_type_name(), $sformatf("legal write OKAY: master%0d addr=%08h id=%08h beats=%0d", mst_idx, addr, tr_id, beat_num), UVM_LOW)
+            `uvm_info(get_type_name(), $sformatf("legal write OKAY: master%0d addr=%08h id=%08b beats=%0d", mst_idx, addr, tr_id, beat_num), UVM_LOW)
         else
             `uvm_error(get_type_name(), $sformatf("legal write expected OKAY, got bresp=%02b addr=%08h id=%08h", bresp, addr, tr_id))
 
@@ -142,7 +142,7 @@ class axicb_base_vseq extends uvm_sequence;
         end
 
         if(resp_ok)
-            `uvm_info(get_type_name(), $sformatf("legal read OKAY: master%0d addr=%08h id=%08h beats=%0d", mst_idx, addr, tr_id, beat_num), UVM_LOW)
+            `uvm_info(get_type_name(), $sformatf("legal read OKAY: master%0d addr=%08h id=%08b beats=%0d", mst_idx, addr, tr_id, beat_num), UVM_LOW)
 
         if(rd_seq.arid != rd_seq.rid)
             `uvm_error(get_type_name(), $sformatf("legal read ID FAILED: arid=%08h rid=%08h", rd_seq.arid, rd_seq.rid))

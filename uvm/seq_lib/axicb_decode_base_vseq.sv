@@ -20,6 +20,7 @@ class axicb_decode_base_vseq extends axicb_base_vseq;
         ref   bit                  upstream_error
     );
         virtual axi_if#(.ID_WIDTH(ID_WIDTH)) vif_mst;
+        bit timeout;
 
         case(mst_idx)
             0: vif_mst = vif_mst00;
@@ -108,6 +109,8 @@ class axicb_decode_base_vseq extends axicb_base_vseq;
                 `uvm_error(get_type_name(), $sformatf("downstream BID mismatch: expect=%09b actual=%09b", expected_id, vif_slv.bid))
                 downstream_error = 1;
             end
+            else 
+                `uvm_info(get_type_name(), $sformatf("got 9-bit id: %09b", vif_slv.bid), UVM_LOW)
         end
         else begin  //READ
             //AR handshake timeout check
@@ -135,6 +138,8 @@ class axicb_decode_base_vseq extends axicb_base_vseq;
                 `uvm_error(get_type_name(), $sformatf("downstream RID mismatch: expect=%09b actual=%09b", expected_id, vif_slv.rid))
                 downstream_error = 1;
             end
+            else
+                `uvm_info(get_type_name(), $sformatf("got 9-bit id: %09b", vif_slv.rid), UVM_LOW)
         end
 
     endtask
