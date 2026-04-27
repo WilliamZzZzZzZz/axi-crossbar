@@ -5,11 +5,11 @@ class axicb_decode_base_vseq extends axicb_base_vseq;
 
     `uvm_object_utils(axicb_decode_base_vseq)
 
-    bit [ADDR_WIDTH - 1:0] s0_base_addr      = 32'h0000_0000;
-    bit [ADDR_WIDTH - 1:0] s0_mid_addr       = 32'h0000_8000;
+    bit [ADDR_WIDTH - 1:0] s0_base_addr = 32'h0000_0000;
+    bit [ADDR_WIDTH - 1:0] s0_mid_addr  = 32'h0000_8000;
     bit [ADDR_WIDTH - 1:0] s0_end_addr  = 32'h0000_FFFC;
-    bit [ADDR_WIDTH - 1:0] s1_base_addr      = 32'h0001_0000;
-    bit [ADDR_WIDTH - 1:0] s1_mid_addr       = 32'h0001_8000;
+    bit [ADDR_WIDTH - 1:0] s1_base_addr = 32'h0001_0000;
+    bit [ADDR_WIDTH - 1:0] s1_mid_addr  = 32'h0001_8000;
     bit [ADDR_WIDTH - 1:0] s1_end_addr  = 32'h0001_FFFC;
 
     function new(string name = "axicb_decode_base_vseq");
@@ -87,6 +87,7 @@ class axicb_decode_base_vseq extends axicb_base_vseq;
             `uvm_fatal(get_type_name(), $sformatf("Address 0x%08h does not map to any slave!", addr))
 
         if(txn_type == WRITE) begin
+            //============================== AW channel ========================================//
             //AW handshake timeout check
             wait_downs_aw_handshake(vif_slv, 1000, timeout);
             if(timeout) begin
@@ -99,7 +100,12 @@ class axicb_decode_base_vseq extends axicb_base_vseq;
                 `uvm_error(get_type_name(), $sformatf("downstream AWADDR mismatch: expect=%08h actual=%08h", addr, vif_slv.awaddr))
                 downstream_error = 1;
             end
-
+            //AW channel AWID check
+            if(vif_slv.awid !== expected_id) begin
+                `uvm_error(get_type_name(), $sformatf("downstream AWID mismatch: expect=%09b actual=%09b", expected_id, vif_slv.awid))
+                downstream_error = 1;
+            end
+            //============================== B channel ========================================//
             //B handshake timeout check
             wait_downs_b_handshake(vif_slv, 1000, timeout);
             if(timeout) begin
@@ -116,6 +122,7 @@ class axicb_decode_base_vseq extends axicb_base_vseq;
                 `uvm_info(get_type_name(), $sformatf("got 9-bit id: %09b", vif_slv.bid), UVM_LOW)
         end
         else begin  //READ
+            //============================== AR channel ========================================//
             //AR handshake timeout check
             wait_downs_ar_handshake(vif_slv, 1000, timeout);
             if(timeout) begin
@@ -128,7 +135,11 @@ class axicb_decode_base_vseq extends axicb_base_vseq;
                 `uvm_error(get_type_name(), $sformatf("downstream ARADDR mismatch: expect=%08h actual=%08h", addr, vif_slv.araddr))
                 downstream_error = 1;
             end
-
+            //AR channel ARID check
+            if(vif_slv.arid !== expected_id) begin
+                `uvm_error(get_type_name(), $sformatf("downstream ARID mismatch: expect=%09b actual=%09b", expected_id, vif_slv.arid))
+            end
+            //============================== R channel ========================================//
             //R handshake timeout check
             wait_downs_r_handshake(vif_slv, 1000, timeout);
             if(timeout) begin

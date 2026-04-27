@@ -12,7 +12,15 @@ class axicb_decode_full_range_vseq extends axicb_decode_base_vseq;
         super.body();
         `uvm_info(get_type_name(), "========== decode_full_range_test_start ==========", UVM_LOW)
 
-        //master_X_slave_X_write_X_read
+        run_full_matrix_decode_test();
+        cross_boundary_addr_decode();
+        same_id_upstream_decode();
+
+        `uvm_info(get_type_name(), "========== decode_full_range_test_end ==========", UVM_LOW)
+    endtask
+
+    //master_X_slave_X_write_X_read
+    local task run_full_matrix_decode_test();
         mx_s0_decode_test(0, WRITE);
         mx_s0_decode_test(0, READ);
         mx_s0_decode_test(1, WRITE);
@@ -21,11 +29,27 @@ class axicb_decode_full_range_vseq extends axicb_decode_base_vseq;
         mx_s1_decode_test(0, READ);
         mx_s1_decode_test(1, WRITE);
         mx_s1_decode_test(1, READ);
+    endtask
 
+    //cross s0 and s1 boundary addr test
+    local task cross_boundary_addr_decode();
         boundary_adjacency_decode(WRITE);
-        boundary_adjacency_decode(READ);
+        boundary_adjacency_decode(READ);        
+    endtask
 
-        `uvm_info(get_type_name(), "========== decode_full_range_test_end ==========", UVM_LOW)
+    //different master send same id txn to downstream 
+    local task same_id_upstream_decode();
+        same_id_one_access(0, WRITE, s0_base_addr, 8'hAB);
+        same_id_one_access(1, WRITE, s0_base_addr, 8'hAB);
+
+        same_id_one_access(0, READ, s0_base_addr, 8'hAB);
+        same_id_one_access(1, READ, s0_base_addr, 8'hAB);
+
+        same_id_one_access(0, WRITE, s1_base_addr, 8'hAB);
+        same_id_one_access(1, WRITE, s1_base_addr, 8'hAB);
+
+        same_id_one_access(0, READ, s1_base_addr, 8'hAB);
+        same_id_one_access(1, READ, s1_base_addr, 8'hAB);
     endtask
 
     local task mx_s0_decode_test(int unsigned mst_idx, trans_type_enum trans_type);
@@ -181,6 +205,31 @@ class axicb_decode_full_range_vseq extends axicb_decode_base_vseq;
                     `uvm_info(get_type_name(), "boundary adjacency decode(READ): s1_base_addr DECODE PASSED!", UVM_LOW)  
             end
         end
+    endtask
+
+    local task same_id_one_access(
+        int unsigned mst_idx,
+        trans_type_enum trans_type,
+        bit [ADDR_WIDTH - 1:0] addr,
+        bit [ID_WIDTH - 1:0] id
+    );
+        bit ups_error = 0;
+        bit downs_error = 0;
+
+        fork
+            case(trans_type)
+                WRITE: do_legal_write(mst_idx, addr, BURST_LEN_SINGLE, INCR, BURST_SIZE_4BYTES, id);
+                READ:  do_legal_read (mst_idx, addr, BURST_LEN_SINGLE, INCR, BURST_SIZE_4BYTES, id);
+                default: `uvm_fatal(get_type_name(), "UNDEFINED trans_type!")
+            endcase
+            upstream_decode_checker(mst_idx, trans_type, id, ups_error);
+            downstream_decode_checker(mst_idx, trans_type, addr, id, downs_error);
+        join
+        if(ups_error || downs_error)
+            `uvm_error(get_type_name(), "same_id_one_access decode: DECODE FAILED!")
+        else
+            `uvm_info(get_type_name(), " same_id_one_access decode: DECODE PASSED!", UVM_LOW)
+
     endtask
 
 endclass
