@@ -7,10 +7,10 @@ class axicb_decode_base_vseq extends axicb_base_vseq;
 
     bit [ADDR_WIDTH - 1:0] s0_base_addr      = 32'h0000_0000;
     bit [ADDR_WIDTH - 1:0] s0_mid_addr       = 32'h0000_8000;
-    bit [ADDR_WIDTH - 1:0] s0_boundary_addr  = 32'h0000_FFFC;
+    bit [ADDR_WIDTH - 1:0] s0_end_addr  = 32'h0000_FFFC;
     bit [ADDR_WIDTH - 1:0] s1_base_addr      = 32'h0001_0000;
     bit [ADDR_WIDTH - 1:0] s1_mid_addr       = 32'h0001_8000;
-    bit [ADDR_WIDTH - 1:0] s1_boundary_addr  = 32'h0001_FFFC;
+    bit [ADDR_WIDTH - 1:0] s1_end_addr  = 32'h0001_FFFC;
 
     function new(string name = "axicb_decode_base_vseq");
         super.new(name);

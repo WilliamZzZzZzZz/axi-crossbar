@@ -12,15 +12,19 @@ class axicb_decode_full_range_vseq extends axicb_decode_base_vseq;
         super.body();
         `uvm_info(get_type_name(), "========== decode_full_range_test_start ==========", UVM_LOW)
 
+        //master_X_slave_X_write_X_read
         mx_s0_decode_test(0, WRITE);
         mx_s0_decode_test(0, READ);
         mx_s0_decode_test(1, WRITE);
         mx_s0_decode_test(1, READ);
-
         mx_s1_decode_test(0, WRITE);
         mx_s1_decode_test(0, READ);
         mx_s1_decode_test(1, WRITE);
         mx_s1_decode_test(1, READ);
+
+        boundary_adjacency_decode(WRITE);
+        boundary_adjacency_decode(READ);
+
         `uvm_info(get_type_name(), "========== decode_full_range_test_end ==========", UVM_LOW)
     endtask
 
@@ -56,20 +60,20 @@ class axicb_decode_full_range_vseq extends axicb_decode_base_vseq;
             else
                 `uvm_info(get_type_name(), "s0_mid_addr: DECODE PASSED!", UVM_LOW)                
         end
-        begin: boundary_addr_decode_test
+        begin: end_addr_decode_test
             bit ups_error = 0, downs_error = 0;
             fork
                 case(trans_type)
-                    WRITE: do_legal_write(mst_idx, s0_boundary_addr, BURST_LEN_SINGLE, INCR, BURST_SIZE_4BYTES, 8'b0101_0101);
-                    READ:  do_legal_read (mst_idx, s0_boundary_addr, BURST_LEN_SINGLE, INCR, BURST_SIZE_4BYTES, 8'b0101_0101);
+                    WRITE: do_legal_write(mst_idx, s0_end_addr, BURST_LEN_SINGLE, INCR, BURST_SIZE_4BYTES, 8'b0101_0101);
+                    READ:  do_legal_read (mst_idx, s0_end_addr, BURST_LEN_SINGLE, INCR, BURST_SIZE_4BYTES, 8'b0101_0101);
                 endcase
                 upstream_decode_checker(mst_idx, trans_type, 8'b0101_0101, ups_error);
-                downstream_decode_checker(mst_idx, trans_type, s0_boundary_addr, 8'b0101_0101, downs_error);
+                downstream_decode_checker(mst_idx, trans_type, s0_end_addr, 8'b0101_0101, downs_error);
             join
             if(ups_error || downs_error)
-                `uvm_error(get_type_name(), "s0_boundary_addr: DECODE FAILED!")
+                `uvm_error(get_type_name(), "s0_end_addr: DECODE FAILED!")
             else
-                `uvm_info(get_type_name(), "s0_boundary_addr: DECODE PASSED!", UVM_LOW)              
+                `uvm_info(get_type_name(), "s0_end_addr: DECODE PASSED!", UVM_LOW)              
         end      
         
     endtask
@@ -106,22 +110,77 @@ class axicb_decode_full_range_vseq extends axicb_decode_base_vseq;
             else
                 `uvm_info(get_type_name(), "s1_mid_addr: DECODE PASSED!", UVM_LOW)                
         end
-        begin: boundary_addr_decode_test
+        begin: end_addr_decode_test
             bit ups_error = 0, downs_error = 0;
             fork
                 case(trans_type)
-                    WRITE: do_legal_write(mst_idx, s1_boundary_addr, BURST_LEN_SINGLE, INCR, BURST_SIZE_4BYTES, 8'b0101_0101);
-                    READ:  do_legal_read (mst_idx, s1_boundary_addr, BURST_LEN_SINGLE, INCR, BURST_SIZE_4BYTES, 8'b0101_0101);
+                    WRITE: do_legal_write(mst_idx, s1_end_addr, BURST_LEN_SINGLE, INCR, BURST_SIZE_4BYTES, 8'b0101_0101);
+                    READ:  do_legal_read (mst_idx, s1_end_addr, BURST_LEN_SINGLE, INCR, BURST_SIZE_4BYTES, 8'b0101_0101);
                 endcase
                 upstream_decode_checker(mst_idx, trans_type, 8'b0101_0101, ups_error);
-                downstream_decode_checker(mst_idx, trans_type, s1_boundary_addr, 8'b0101_0101, downs_error);
+                downstream_decode_checker(mst_idx, trans_type, s1_end_addr, 8'b0101_0101, downs_error);
             join
             if(ups_error || downs_error)
-                `uvm_error(get_type_name(), "s1_boundary_addr: DECODE FAILED!")
+                `uvm_error(get_type_name(), "s1_end_addr: DECODE FAILED!")
             else
-                `uvm_info(get_type_name(), "s1_boundary_addr: DECODE PASSED!", UVM_LOW)              
+                `uvm_info(get_type_name(), "s1_end_addr: DECODE PASSED!", UVM_LOW)              
         end      
         
+    endtask
+
+    local task boundary_adjacency_decode(trans_type_enum trans_type);
+        if(trans_type == WRITE) begin
+            begin: s0_end_write_txn
+                bit ups_error = 0, downs_error = 0;
+                fork
+                    do_legal_write(0, s0_end_addr, BURST_LEN_SINGLE, INCR, BURST_SIZE_4BYTES, 8'b1100_1100);
+                    upstream_decode_checker(0, trans_type, 8'b1100_1100, ups_error);
+                    downstream_decode_checker(0, trans_type, s0_end_addr, 8'b1100_1100, downs_error);
+                join
+                if(ups_error || downs_error)
+                    `uvm_error(get_type_name(), "boundary adjacency decode(WRITE): s0_end_addr DECODE FAILED!")
+                else
+                    `uvm_info(get_type_name(), "boundary adjacency decode(WRITE): s0_end_addr DECODE PASSED!", UVM_LOW)                    
+            end
+            begin: s1_base_write_txn
+                bit ups_error = 0, downs_error = 0;
+                fork
+                    do_legal_write(0, s1_base_addr, BURST_LEN_SINGLE, INCR, BURST_SIZE_4BYTES, 8'b1100_1100);
+                    upstream_decode_checker(0, trans_type, 8'b1100_1100, ups_error);
+                    downstream_decode_checker(0, trans_type, s1_base_addr, 8'b1100_1100, downs_error);
+                join
+                if(ups_error || downs_error)
+                    `uvm_error(get_type_name(), "boundary adjacency decode(WRITE): s1_base_addr DECODE FAILED!")
+                else
+                    `uvm_info(get_type_name(), "boundary adjacency decode(WRITE): s1_base_addr DECODE PASSED!", UVM_LOW)  
+            end
+        end
+        else begin  //READ
+            begin: s0_end_read_txn
+                bit ups_error = 0, downs_error = 0;
+                fork
+                    do_legal_read(0, s0_end_addr, BURST_LEN_SINGLE, INCR, BURST_SIZE_4BYTES, 8'b0011_0011);
+                    upstream_decode_checker(0, trans_type, 8'b0011_0011, ups_error);
+                    downstream_decode_checker(0, trans_type, s0_end_addr, 8'b0011_0011, downs_error);
+                join
+                if(ups_error || downs_error)
+                    `uvm_error(get_type_name(), "boundary adjacency decode(READ): s0_end_addr DECODE FAILED!")
+                else
+                    `uvm_info(get_type_name(), "boundary adjacency decode(READ): s0_end_addr DECODE PASSED!", UVM_LOW)                    
+            end
+            begin: s1_base_read_txn
+                bit ups_error = 0, downs_error = 0;
+                fork
+                    do_legal_read(0, s1_base_addr, BURST_LEN_SINGLE, INCR, BURST_SIZE_4BYTES, 8'b0011_0011);
+                    upstream_decode_checker(0, trans_type, 8'b0011_0011, ups_error);
+                    downstream_decode_checker(0, trans_type, s1_base_addr, 8'b0011_0011, downs_error);
+                join
+                if(ups_error || downs_error)
+                    `uvm_error(get_type_name(), "boundary adjacency decode(READ): s1_base_addr DECODE FAILED!")
+                else
+                    `uvm_info(get_type_name(), "boundary adjacency decode(READ): s1_base_addr DECODE PASSED!", UVM_LOW)  
+            end
+        end
     endtask
 
 endclass
