@@ -32,6 +32,7 @@ class axicb_coverage extends uvm_component;
         cg_comprehensive = new();
         cg_routing       = new();
         cg_response      = new();
+        cg_decode        = new();
     endfunction
 
     function void write_mst00(axi_transaction t);
@@ -77,6 +78,7 @@ class axicb_coverage extends uvm_component;
         cg_comprehensive.sample();
         cg_routing.sample();
         cg_response.sample();
+        cg_decode.sample();
     endfunction
 
     function void report_phase(uvm_phase phase);
@@ -148,12 +150,12 @@ class axicb_coverage extends uvm_component;
         option.name = "routing path coverage";
 
         CP_SRC_MASTER: coverpoint src_master {
-            bins m0 = {0};
-            bins m1 = {1};
+            bins master0 = {0};
+            bins master1 = {1};
         }
         CP_DST_SLAVE: coverpoint dst_slave {
-            bins s0     = {0};
-            bins s1     = {1};
+            bins slave0 = {0};
+            bins slave1 = {1};
             bins decerr = {-1};
         }
         CP_TXN_TYPE: coverpoint trans_type {
@@ -178,6 +180,28 @@ class axicb_coverage extends uvm_component;
         CX_RESP: cross CP_RESP, CP_TXN_TYPE;
     endgroup
 
+    covergroup cg_decode;
+        option.per_instance = 1;
+        option.name = "decode key address";
+        
+        DECODE_ADDR: coverpoint addr {
+            bins s0_base = {32'h0000_0000};
+            bins s0_mid  = {32'h0000_8000};
+            bins s0_end  = {32'h0000_FFFC};
+            bins s1_base = {32'h0001_0000};
+            bins s1_mid  = {32'h0001_8000};
+            bins s1_end  = {32'h0001_FFFC};
+        }
+        DECODE_MST: coverpoint src_master {
+            bins master0 = {0};
+            bins master1 = {1};
+        }
+        DECODE_TYPE: coverpoint trans_type {
+            bins write = {WRITE};
+            bins read  = {READ};
+        }
+        CX_DECODE: cross DECODE_ADDR, DECODE_MST, DECODE_TYPE;
+    endgroup
 endclass
 
 `endif 
