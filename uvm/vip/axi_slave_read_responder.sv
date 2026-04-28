@@ -82,10 +82,11 @@ class axi_slave_read_responder extends uvm_object;
             for(int i = 0; i < beat_num; i++) begin
                 //got every beat's addr
                 beat_addr = axi_slave_mem#()::calc_beat_addr(
-                    tr.araddr,
-                    tr.arburst,
-                    tr.arsize,
-                    i
+                    .base_addr (tr.araddr),
+                    .burst_len (tr.arlen),
+                    .burst_type(tr.arburst),
+                    .burst_size(tr.arsize),
+                    .beat_idx  (i)
                 );
                 word_addr = {beat_addr[ADDR_WIDTH - 1:2], 2'b00};
                 word_data = mem.read_word(word_addr);

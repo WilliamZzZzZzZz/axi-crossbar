@@ -81,6 +81,26 @@ class axi_transaction extends uvm_sequence_item;
         awlen inside {[0:255]};  // 1-16 beats
         arlen inside {[0:255]};
     }
+    constraint c_wrap_addr_legal {
+        if(awburst == WRAP) {
+            awlen inside {
+                BURST_LEN_2BEATS,
+                BURST_LEN_4BEATS,
+                BURST_LEN_8BEATS,
+                BURST_LEN_16BEATS
+            };
+            (awaddr % (1 << int'(awsize))) == 0;
+        }
+        if(arburst == WRAP) {
+            arlen inside {
+                BURST_LEN_2BEATS,
+                BURST_LEN_4BEATS,
+                BURST_LEN_8BEATS,
+                BURST_LEN_16BEATS
+            };
+            (araddr % (1 << int'(awsize))) == 0;
+        }
+    }
     
     // maximum burst size is 8 bytes, but DUT's DATA_WIDTH = 32bits,  which means maximum size is 4 bytes
     constraint c_size {

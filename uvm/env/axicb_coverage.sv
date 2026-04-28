@@ -17,6 +17,7 @@ class axicb_coverage extends uvm_component;
     burst_type_enum burst_type;
     bit [ADDR_WIDTH - 1:0] addr;
     bit [STRB_WIDTH - 1:0] wstrb;
+    int unsigned wrap_start_offset;
 
     int src_master;     // 0: mst00, 1: mst01
     int dst_slave;      // 0: slv00, 1: slv01
@@ -29,6 +30,7 @@ class axicb_coverage extends uvm_component;
         //TODO new every covergroup below
         cg_trans_type    = new();
         cg_burst         = new();
+        cg_wrap          = new();
         cg_comprehensive = new();
         cg_routing       = new();
         cg_response      = new();
@@ -47,6 +49,10 @@ class axicb_coverage extends uvm_component;
 
     //automatically callback while monitor finish every single transaction
     virtual function void sample_all(axi_transaction t);
+        int unsigned beats;
+        int unsigned beat_bytes;
+        int unsigned wrap_bytes;
+
         trans_type = t.trans_type;
         if(t.trans_type == WRITE) begin
             addr        = t.awaddr;
@@ -64,6 +70,15 @@ class axicb_coverage extends uvm_component;
             resp        = (t.rresp.size() > 0) ? t.rresp[0] : 2'b00;
         end
 
+        if(burst_type == WRAP) begin
+            beats             = int'(burst_len) + 1;
+            beat_bytes        = 1 << int'(burst_size);
+            wrap_bytes        = beats * beat_bytes;
+            wrap_start_offset = addr % wrap_bytes;
+        end else begin
+            wrap_start_offset = 0;
+        end
+
         //use 'addr' to decide this tr send to which slave
         if((addr >= 32'h0000_0000) && (addr <= 32'h0000_FFFF))
             dst_slave = 0;
@@ -75,6 +90,7 @@ class axicb_coverage extends uvm_component;
         //TODO sample every covergroup
         cg_trans_type.sample();
         cg_burst.sample();
+        cg_wrap.sample();
         cg_comprehensive.sample();
         cg_routing.sample();
         cg_response.sample();
@@ -119,8 +135,28 @@ class axicb_coverage extends uvm_component;
             bins byte_4 = {BURST_SIZE_4BYTES};
         }
 
-        BURST_TYPE_X_LEN:  cross BURST_TYPE, BURST_LEN;
+        BURST_TYPE_X_LEN: cross BURST_TYPE, BURST_LEN {
+            // WRAP requires AxLEN to be 1/3/7/15 (2/4/8/16 beats); single beat is illegal
+            ignore_bins wrap_illegal_single = binsof(BURST_TYPE.wrap) && binsof(BURST_LEN.beat_single);
+        }
         BURST_TYPE_X_SIZE: cross BURST_TYPE, BURST_SIZE;
+    endgroup
+
+    covergroup cg_wrap;
+        option.per_instance = 1;
+        option.name = "wrap burst coverage";
+
+        WRAP_LEN: coverpoint burst_len iff (burst_type == WRAP) {
+            bins beats_2  = {BURST_LEN_2BEATS};
+            bins beats_4  = {BURST_LEN_4BEATS};
+            bins beats_8  = {BURST_LEN_8BEATS};
+            bins beats_16 = {BURST_LEN_16BEATS};
+        }
+
+        WRAP_START_OFFSET: coverpoint wrap_start_offset iff (burst_type == WRAP) {
+            bins at_boundary = {0};
+            bins nonzero     = {[1:63]};
+        }
     endgroup
     
     covergroup cg_comprehensive;
@@ -134,6 +170,7 @@ class axicb_coverage extends uvm_component;
         CP_BURST: coverpoint burst_type {
             bins fixed = {FIXED};
             bins incr  = {INCR};
+            bins wrap  = {WRAP};
         }
         CP_LEN: coverpoint burst_len {
             bins beat_single = {BURST_LEN_SINGLE};

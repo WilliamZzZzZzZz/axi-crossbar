@@ -162,10 +162,11 @@ class axi_slave_write_responder extends uvm_object;
             for(int i = 0; i < beat_num; i++) begin
                 //got every beat's actual addr
                 beat_addr = axi_slave_mem#()::calc_beat_addr(
-                    tr.awaddr,
-                    tr.awburst,
-                    tr.awsize,
-                    i
+                    .base_addr (tr.awaddr),
+                    .burst_len (tr.awlen),
+                    .burst_type(tr.awburst),
+                    .burst_size(tr.awsize),
+                    .beat_idx  (i)
                 );
                 //align to 4-byte word boundary
                 word_addr = {beat_addr[ADDR_WIDTH - 1:2], 2'b00};

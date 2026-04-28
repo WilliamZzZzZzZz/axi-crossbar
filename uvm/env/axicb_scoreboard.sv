@@ -58,8 +58,8 @@ class axicb_scoreboard extends uvm_subscriber #(axi_transaction);
         //calculate every beat's word_addr, store expected data into ref_mem word by word
         for(int i = 0; i < beats; i++) begin
             //get every beat's address
-            addr = calculate_beat_addr(tr.awaddr, tr.awburst, tr.awsize, i);
-            word_addr = {addr[15:2], 2'b00};
+            addr = calculate_beat_addr(tr.awaddr, tr.awlen, tr.awburst, tr.awsize, i);
+            word_addr = {addr[ADDR_WIDTH - 1:2], 2'b00};
             //pull old_data from ref_mem
             old_word = ref_mem.exists(word_addr) ? ref_mem[word_addr] : 32'h0;
             //merge old_data with wstrb, got new_data and put it in to ref_mem
@@ -98,8 +98,8 @@ class axicb_scoreboard extends uvm_subscriber #(axi_transaction);
         end
 
         for(int i = 0; i < beats; i++) begin
-            addr = calculate_beat_addr(tr.araddr, tr.arburst, tr.arsize, i);
-            word_addr = {addr[15:2], 2'b00};
+            addr = calculate_beat_addr(tr.araddr, tr.arlen, tr.arburst, tr.arsize, i);
+            word_addr = {addr[ADDR_WIDTH - 1:2], 2'b00};
             expected_data = ref_mem.exists(word_addr) ? ref_mem[word_addr] : 32'h0;
             check_count++;
             //compare_data
@@ -117,28 +117,41 @@ class axicb_scoreboard extends uvm_subscriber #(axi_transaction);
     endfunction
 
     //calculate the beat's actual address
-    local function bit [15:0] calculate_beat_addr(
-        bit [ADDR_WIDTH - 1:0]      base_addr,
-        burst_type_enum burst_type,
-        burst_size_enum burst_size,
-        int             beat_idx
+    local function bit [ADDR_WIDTH - 1:0] calculate_beat_addr(
+        bit [ADDR_WIDTH - 1:0] base_addr,
+        burst_len_enum         burst_len,
+        burst_type_enum        burst_type,
+        burst_size_enum        burst_size,
+        int                    beat_idx
     );  
-        int unsigned    stride;
-        bit [ADDR_WIDTH - 1:0]      aligned_start;
-        bit [ADDR_WIDTH - 1:0]      beat_addr;
+        int unsigned            stride;
+        int unsigned            total_bytes;
+        bit [ADDR_WIDTH - 1:0]  aligned_start;
+        bit [ADDR_WIDTH - 1:0]  beat_addr;
+        bit [ADDR_WIDTH - 1:0]  wrap_low;
+        bit [ADDR_WIDTH - 1:0]  wrap_high;
 
         stride        = 1 << int'(burst_size);      //byte number of every beat 
         aligned_start = (base_addr / stride) * stride;    //dynamically calculate first beat's aligned addr according to burst_szie
 
-        if(burst_type == FIXED)  begin
-            beat_addr = base_addr;
-        end
-        else begin  //INCR
-            if(beat_idx == 0)
-                beat_addr = base_addr;          //AXI protocol: under unaligned trans, INCR's first beat addr keep the unaligned address 
-            else
-                beat_addr = aligned_start + beat_idx * stride;   //calculate following beats' aligned address
-        end
+        case(burst_type)
+            FIXED: beat_addr = base_addr;
+            INCR: begin
+                if(beat_idx == 0)
+                    beat_addr = base_addr;
+                else
+                    beat_addr = aligned_start + beat_idx * stride;
+            end
+            WRAP: begin
+                total_bytes = (int'(burst_len) + 1) * stride;
+                wrap_low    = (base_addr / total_bytes) * total_bytes;
+                wrap_high   = wrap_low + total_bytes;
+                beat_addr   = base_addr + (beat_idx * stride);
+                if (beat_addr >= wrap_high)
+                    beat_addr = beat_addr - total_bytes;
+            end
+        endcase
+
         return beat_addr;
     endfunction
 

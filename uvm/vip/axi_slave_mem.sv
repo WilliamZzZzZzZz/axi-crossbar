@@ -44,29 +44,39 @@ class axi_slave_mem #(
     //calculate every beat's actual addr
     static function bit [ADDR_WIDTH - 1:0] calc_beat_addr(
         bit [ADDR_WIDTH - 1:0] base_addr,
-        bit [1:0]              burst_type,
-        bit [2:0]              burst_size,
+        burst_len_enum         burst_len,
+        burst_type_enum        burst_type,
+        burst_size_enum        burst_size,
         int                    beat_idx
     );
         int unsigned           stride;
         int unsigned           total_bytes;
         bit [ADDR_WIDTH - 1:0] aligned_start;
         bit [ADDR_WIDTH - 1:0] addr;
+        bit [ADDR_WIDTH - 1:0] wrap_low;
+        bit [ADDR_WIDTH - 1:0] wrap_high;
 
         stride = 1 << int'(burst_size);
         aligned_start = (base_addr / stride) * stride;
 
         case (burst_type)
-            2'b00: begin    //FIXED
+            FIXED: begin    //FIXED
                 addr = base_addr;
             end
-            2'b01: begin    //INCR
+            INCR: begin    //INCR
                 if(beat_idx == 0)
                     addr = base_addr;
                 else
                     addr = aligned_start + (beat_idx * stride);
             end
-            //TODO:WRAP
+            WRAP: begin    //WRAP
+                total_bytes = (int'(burst_len) + 1) * stride;
+                wrap_low    = (base_addr / total_bytes) * total_bytes;
+                wrap_high   = wrap_low + total_bytes;
+                addr        = base_addr + (beat_idx * stride);
+                if (addr >= wrap_high)
+                    addr = addr - total_bytes;
+            end
             default: begin
                 addr = base_addr;
                 $error("calc_beat_addr: burst_type = %0b is illegal", burst_type);
