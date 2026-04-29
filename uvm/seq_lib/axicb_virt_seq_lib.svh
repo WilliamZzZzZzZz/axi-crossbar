@@ -5,6 +5,7 @@
 `include "axicb_base_vseq.sv"
 `include "axicb_decerr_base_vseq.sv"
 `include "axicb_decode_base_vseq.sv"
+`include "axicb_burst_base_vseq.sv"
 `include "axicb_smoke_vseq.sv"
 `include "axicb_decerr_single_vseq.sv"
 `include "axicb_decerr_burst_vseq.sv"
