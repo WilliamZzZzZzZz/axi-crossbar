@@ -436,47 +436,95 @@ expect_route(master_idx, addr, expected_slave, id);
 
 #### 建议 test/vseq
 
-- `axicb_burst_data_test`
-- `axicb_burst_data_vseq`
+- `axicb_burst_base_vseq`：中间层，不直接作为 test 运行，负责 burst 公共 helper 与 checker。
+- `axicb_burst_type_test`
+- `axicb_burst_type_vseq`
+- `axicb_burst_size_lane_test`
+- `axicb_burst_size_lane_vseq`
+- `axicb_burst_long_test`
+- `axicb_burst_long_vseq`
+- `axicb_burst_region_policy_test`：gated，region-edge policy 澄清后再进入 regression。
+- `axicb_burst_region_policy_vseq`：gated，region-edge policy 澄清后再进入 regression。
 
 #### 验证目标
 
-验证合法路由场景下的数据通路与 beat/lane 语义，而不是重复地址 decode。
+验证合法路由场景下三种 AXI burst mode 的数据通路、beat 地址推进、`LAST` 语义与 byte-lane 语义，而不是重复地址 decode。
 
-| section | 激励 | 检查 |
+P3 的验证顺序应以 burst 完整性为主线：先用简单、可归因的条件同时建立 `FIXED/INCR/WRAP` 三种传输模式的基础闭环，再扩展 `burst_type x burst_len x burst_size x read/write` 组合覆盖，最后展开 WSTRB、narrow、unaligned 等 byte-lane 功能点。这样既保持 burst 验证思路完整，也避免在基础 burst/address 模型尚未证明前把复杂 byte-lane 场景混入，导致失败难以归因。
+
+#### Vseq 分层架构
+
+P3 不建议实现为一个装满所有 testcase 的 `burst_data_vseq`。参考当前 `axicb_decerr_base_vseq -> axicb_decerr_single/burst/id/dual_mst_vseq` 和 `axicb_decode_base_vseq -> axicb_decode_full_range_vseq` 的组织方式，burst pack 应拆成一个中间层和若干按风险域划分的底层 vseq。底层 vseq 数量不预设，按 testcase 的调试归因、运行成本和 signoff 阶段自然拆分。
+
+| 层级 | vseq | 职责 |
 |---|---|---|
-| INCR burst | 1/2/4/8/16 beats，覆盖 `m0/m1 x s0/s1` | 所有 beat 数据读回一致，W channel 不跨 slave |
-| long INCR smoke | 稳定后加入 32/64/128/256 beats 中少量 case | 长 burst 期间 W route 锁定到同一 downstream |
-| FIXED burst | 4/8 beat FIXED write/read | 多 beat 写同一地址，最终读回符合模型 |
-| WSTRB partial | full/low-byte/high-byte/sparse masks | byte merge 正确 |
-| narrow size | 1B/2B/4B | byte lane 与地址推进正确 |
-| unaligned INCR | 合法未对齐起始地址 | 首拍地址和后续 aligned 地址符合模型 |
+| 中间层 | `axicb_burst_base_vseq` | 提供 burst 参数表、地址选择、write/read 启动、response/data/route checker、byte-lane 预测等公共 helper；不直接承载 testcase。 |
+| 底层 | `axicb_burst_type_vseq` | 验证 `FIXED/INCR/WRAP` 三种 burst mode 的基础语义、length matrix、FIXED overwrite、WRAP address loop。 |
+| 底层 | `axicb_burst_size_lane_vseq` | 验证 `AxSIZE`、WSTRB merge、narrow transfer、unaligned INCR 等 byte-lane 语义；依赖 type foundation 已稳定。 |
+| 底层 | `axicb_burst_long_vseq` | 验证长 burst counter、buffer、`LAST`、timeout 风险；运行成本高于普通 directed case，因此单独拆出。 |
+| gated 底层 | `axicb_burst_region_policy_vseq` | 验证 region-edge/cross-window burst policy；spec 未澄清前只保留计划，不进入主 regression。 |
 
-#### 测试点细化
+#### `axicb_burst_base_vseq` 通用 helper
 
-| 测试点 | 激励思路 | 设计思路 | 检查通过标志 |
+| helper 类别 | helper 功能 | 作用 |
+|---|---|---|
+| 地址选择 | 根据 `slv_idx` 返回 `base/mid/end` 地址，并提供 safe mid-window 地址选择 | 避免每个底层 vseq 重复写 `s0/s1` 地址表；foundation 与 matrix case 默认使用 mid-window 地址，降低与 decode edge 的耦合。 |
+| route 预测 | 根据起始地址计算 expected slave，并返回对应 downstream vif | 统一 route checker 的期望值；P3 只验证合法路由下 burst 不跨 slave，不重复 P1 decode 表。 |
+| burst 参数转换 | 统一计算 `beat_num = AxLEN + 1`、`bytes_per_beat = 1 << AxSIZE`、WRAP 合法 len 集合 | 防止各 testcase 对 len enum、size enum 的解释不一致；WRAP single-beat 在这里统一屏蔽。 |
+| WRAP 地址模型 | 根据 `base_addr/burst_len/burst_size/beat_idx` 计算 wrap window 与每拍期望地址 | 供 WRAP testcase、narrow WRAP representative case 和 checker 复用；避免 scoreboard 与 vseq checker 使用两套语义。 |
+| 通用 beat 地址模型 | 对 `FIXED/INCR/WRAP` 计算每拍期望地址序列 | 支撑 readback 预测、FIXED overwrite、unaligned INCR 首拍与后续 aligned 推进检查。 |
+| 地址合法性保护 | 判断 burst 是否会越过 slave window，生成不跨 window 的安全地址；region-edge case 可显式绕过 | 保证普通 burst testcase 失败时可归因到 burst/data path，而不是未定义的 cross-window policy。 |
+| data pattern 生成 | 生成 per-beat data，例如 `base_pattern + beat_idx`、walking byte、固定 seed random | 保证 readback mismatch 能定位到 beat index；FIXED/WRAP 场景需要每拍不同 data 才能暴露地址计算错误。 |
+| WSTRB pattern 生成 | 生成 full、single-lane、sparse、per-beat rotating mask | lane vseq 不需要手写 mask 数组；coverage 可以按 mask class 收敛。 |
+| byte merge 预测 | 根据 old word、new data、WSTRB 计算期望 word | 这是 WSTRB/narrow/FIXED overwrite 的核心 golden model；避免只比较整 word 覆盖掉 byte-lane bug。 |
+| burst write 启动 | 创建 `axicb_single_write_sequence`，配置 master、addr、burst_type、len、size、ID、data array、WSTRB array，并返回 B response/ID | 底层 vseq 只表达 testcase 参数，不重复 sequence 字段配置；也便于统一检查 OKAY/DECERR。 |
+| burst read 启动 | 创建 `axicb_single_read_sequence`，配置 master、addr、burst_type、len、size、ID，并返回每拍 data/resp/last 信息 | 支撑 write -> read compare、read-only matrix、response count 与 `RLAST` 检查。 |
+| write-read compare | 封装 write 后 read，并用 beat address + byte merge 模型预测期望 readback | 大多数合法 burst testcase 复用这个 helper，底层只传参数表。 |
+| response checker | 检查 write 只有 1 个 OKAY B 且 BID 匹配；read 有 `ARLEN+1` 个 OKAY R、RID 匹配、仅最后一拍 `RLAST=1` | 直接观察 DUT 在 upstream 返回的协议现象，确保 testcase 成功不只是 scoreboard 静默。 |
+| downstream attr checker | 检查 downstream AW/AR 的 `addr/id/burst/len/size` 与 upstream 期望一致 | crossbar 不应转换、拆分、合并 burst；这是 P3 对 crossbar 透传属性的关键检查。 |
+| route lock checker | 检查合法 burst 的 AW/AR 只进入 expected slave，W channel 在整个 burst 内不泄漏到其他 downstream | 覆盖 crossbar 在多 beat write 中最关键的 route lock 风险。 |
+| timeout checker | 对 B/R burst 完成设置 timeout，并在失败 log 中打印 testcase 参数、master/slave、type/len/size/addr | 长 burst 与 matrix case 必须可诊断，避免失败只表现为仿真挂死。 |
+| coverage checkpoint | 在 testcase 结束时打印本 case 期望命中的 coverage 类别 | 让底层 vseq 与 `cg_burst/cg_wrap/cg_wstrb_lane` 的目标保持对应关系，便于 regression triage。 |
+
+#### 底层 vseq 与 testcase 分类
+
+| 底层 vseq | 容纳 testcase | 分类理由 |
+|---|---|---|
+| `axicb_burst_type_vseq` | `tc_burst_foundation_3type`、`tc_burst_type_len_matrix`、`tc_fixed_overwrite`、`tc_wrap_address_loop` | 这些 testcase 都在回答同一个问题：三种 burst mode 的地址语义、length 行为、route lock 与参数透传是否闭环。 |
+| `axicb_burst_size_lane_vseq` | `tc_burst_type_size_rw_matrix`、`tc_wstrb_lane_merge`、`tc_narrow_size_matrix`、`tc_unaligned_incr` | `AxSIZE` 在 AXI 中既是 burst 参数也是 byte-lane 行为的入口；把 size、WSTRB、narrow、unaligned 放在同一 vseq，可以让失败归因集中到 lane/低位地址模型。 |
+| `axicb_burst_long_vseq` | `tc_long_incr_smoke` | 长 burst 的价值是打计数器、buffer、`LAST` 和 timeout，运行成本和 debug 方式都不同于普通 matrix，所以单独拆成轻量 smoke vseq。 |
+| `axicb_burst_region_policy_vseq` | `tc_region_edge_burst_policy` | cross-window burst 是 crossbar 特有 policy，不是普通 burst 数据通路问题；spec 未明确前该 vseq gated，不进入常规 regression。 |
+
+#### Testcase 细化
+
+| testcase | vseq/task 设计 | checker/期望观测 | 必要性与取舍 |
 |---|---|---|---|
-| INCR burst basic | 在 `m0/m1 x s0/s1` 上执行 1/2/4/8/16 beat INCR write -> read，每 beat data 不同 | 先覆盖 AXI 最常用 burst 类型，验证地址递增、数据队列、`WLAST/RLAST` 和 route 锁定 | 每个 beat readback data 与写入一致；`WLAST` 只在最后一拍；`RLAST` 只在最后一拍；burst 全程只进入同一 downstream |
-| INCR burst near window middle | 选择窗口中部地址，例如 `0x0000_8000`、`0x0001_8000` | 避免边界因素干扰，作为 burst 数据模型的稳定基准 | scoreboard beat address 递增正确；无 mismatch；coverage length bins 命中 |
-| long INCR smoke | 在模型稳定后选少量 32/64/128/256 beat case，不做全组合 | 长 burst 用于暴露计数器、buffer、`LAST` 和 outstanding 相关 bug，但不应该在 directed 中爆炸组合数 | 长 burst 完整结束；response 数量正确；无 timeout；readback 全部正确 |
-| FIXED burst overwrite | 对同一地址发 4/8 beat FIXED write，data 每拍不同，然后读回 | FIXED 的语义是地址不变，多拍写同一位置，最终值应由 byte-lane 合并后的最后有效写决定 | downstream 地址保持不变；scoreboard 最终模型与 readback 一致；`FIXED x len` coverage 命中 |
-| WSTRB full/single lane | 对同一 word 先写全字，再用 `4'b0001/0010/0100/1000` 分别改写单 byte | 验证 byte lane merge，不让 scoreboard 只按整字覆盖而漏掉 WSTRB bug | 未使能 byte 保持原值；使能 byte 更新；四个 single-lane bins 全命中 |
-| WSTRB sparse mask | 使用 `4'b0101`、`4'b1010`、`4'b0110` 等 sparse mask | sparse mask 是 byte merge 的高价值 corner，比简单 low/high byte 更容易暴露拼接错误 | readback 每个 byte 与预期模型一致；coverage sparse bin 命中 |
-| narrow size 1B/2B/4B | 使用 `AWSIZE/ARSIZE` 为 0/1/2，地址覆盖不同 byte offset | 验证 size 与地址低位共同决定有效 byte lane，防止只按 4B word 简化建模 | 每笔 narrow write 只影响合法 byte；readback 与模型一致；无协议 error |
-| unaligned INCR | 在 DUT/VIP 支持范围内选择未 4B 对齐起始地址，例如 `+1/+2` offset 的 1B/2B transfer | 该点依赖 scoreboard 与 slave memory beat 计算，目的是验证低位地址推进，不用于 route decode | 首拍 byte lane 与起始 offset 一致；后续 beat 地址推进符合 AXI 规则；无数据错位 |
-| region-edge burst policy | 先作为 review item：确认是否允许 burst 从 `0x0000_FFFx` 跨过 `0x0001_0000` 地址窗口 | crossbar 当前按起始地址 decode，跨 region burst 的期望需要由 spec 明确，不能贸然写成 directed pass/fail | 未澄清前不进入 regression；澄清后补明确断言：要么禁止并报错，要么全 burst 按起始地址路由 |
+| `tc_burst_foundation_3type` | 属于 `axicb_burst_type_vseq`。在 `m0/m1 x s0/s1` 上选 mid-window 地址，例如 `0x0000_8000`、`0x0001_8000`；循环调用 base helper 执行 `FIXED/INCR/WRAP` write -> read，统一使用 4-beat、4B、full WSTRB、per-beat data pattern。WRAP 选合法 non-boundary start，例如 4-beat、4B、`addr=0x0000_8008`。 | response checker 看到 1 个 OKAY B、`ARLEN+1` 个 OKAY R、仅最后一拍 `RLAST=1`；downstream attr checker 看到 `AxBURST/AxLEN/AxSIZE` 透传；route lock checker 看到 AW/AR/W 只进入 expected slave；data checker 看到 readback 与期望一致。 | 这是 P3 的最小闭环门禁。它不追求组合全覆盖，而是先证明三种 burst mode 在最简单条件下都能跑通；没有它，后续 matrix/lane 失败会很难归因。 |
+| `tc_burst_type_len_matrix` | 属于 `axicb_burst_type_vseq`。用参数表驱动：`FIXED/INCR` 覆盖 1/2/4/8/16 beats；`WRAP` 覆盖合法 2/4/8/16 beats。每个 case 复用同一 write-read helper，地址由 safe-address helper 保证不跨 slave window。 | response checker 逐 case 检查 beat 数与 `LAST`；coverage checkpoint 期望 `BURST_TYPE_X_LEN` 合法 bins 命中；WRAP single 不生成或被 coverage ignore。 | 这是 burst 完整性矩阵的主干。它替代单独的 `INCR basic` 重复表，不再为 INCR 额外写一套低价值 case。 |
+| `tc_burst_type_size_rw_matrix` | 属于 `axicb_burst_size_lane_vseq`。在 type/len foundation 通过后，对 `FIXED/INCR/WRAP` 各取代表性 len，覆盖 `AWSIZE/ARSIZE=0/1/2`，并显式拆 write-only、read-only、write-read 三类路径。 | downstream attr checker 检查 `AxSIZE` 透传；response checker 分别覆盖 B/R 路径；data checker 对 write-read case 按 size 预测 lane 影响；coverage checkpoint 期望 `BURST_TYPE_X_SIZE` 与 read/write cross 命中。 | size 组合既是 burst 参数覆盖，也是 lane 语义入口；把它放在 size/lane vseq，可以和 narrow/WSTRB checker 复用同一套 byte-lane golden model，避免在 type vseq 中重复建模。 |
+| `tc_fixed_overwrite` | 属于 `axicb_burst_type_vseq`。对同一 word 地址执行 4/8 beat `FIXED` write，每拍 data 不同；基础版本使用 full WSTRB，扩展版本可调用 lane helper 加 partial WSTRB。随后用 FIXED 或 single read 读回同地址。 | beat address checker 期望每拍地址都等于起始地址；byte merge checker 预测最终 word 等于最后有效写合并后的值；readback 必须与最终模型一致。 | 普通 write-read compare 可能掩盖 FIXED 的“多拍同地址覆盖”语义，因此需要单独 testcase。它是 FIXED 最有价值的 corner，不是冗余 case。 |
+| `tc_wrap_address_loop` | 属于 `axicb_burst_type_vseq`。对 WRAP 2/4/8/16 beat 分别运行 boundary start 与 non-boundary start；例如 4-beat、4B、`addr=0x0000_4008`，期望地址序列为 `0x4008,0x400C,0x4000,0x4004`。 | WRAP 地址 helper 计算 wrap window 和每拍期望地址；data checker 用不同 beat data 验证回绕后的读回位置；coverage checkpoint 期望 `WRAP_LEN` 与 `WRAP_START_OFFSET` 命中。 | WRAP 是三种基础 burst mode 之一，但它的风险集中在回绕地址，不应只靠 matrix 里的 readback 间接覆盖；这个 testcase 是必要的 WRAP directed。 |
+| `tc_wstrb_lane_merge` | 属于 `axicb_burst_size_lane_vseq`。合并原 single-lane 与 sparse-mask 两类 testcase：先 full write baseline，例如 `32'hAABB_CCDD`；再依次使用 `4'b0001/0010/0100/1000` 与 `4'b0101/1010/0110` 写入易观察 data，每次写后 readback。 | byte merge checker 对每个 byte 独立判断保留/更新；readback 必须逐 byte 匹配；coverage checkpoint 期望 single-lane 与 sparse bins 命中。 | single 与 sparse 都验证同一个 byte merge 机制，拆成两个 testcase 会增加调度成本但不增加太多归因价值，因此合并为一个高价值 lane testcase。 |
+| `tc_narrow_size_matrix` | 属于 `axicb_burst_size_lane_vseq`。覆盖 `AWSIZE/ARSIZE=0/1/2` 与不同 byte offset；在三种 burst type 中各取少量代表组合，例如 `INCR len=4 size=1B offset=1`、`FIXED len=4 size=2B`、`WRAP len=4 size=2B aligned start`。 | beat address checker 期望 stride 等于 `1 << size`；byte merge checker 期望 narrow write 只更新合法 byte；WRAP case 额外检查起始地址满足 transfer size 对齐；readback 与模型一致。 | 这个 testcase 覆盖 size 对 lane 的真实影响，和 `tc_burst_type_size_rw_matrix` 的参数/方向覆盖互补；前者看系统组合，后者看具体 lane 数据语义。 |
+| `tc_unaligned_incr` | 属于 `axicb_burst_size_lane_vseq`。只覆盖 AXI 合法 unaligned INCR，例如 1B transfer 的 `addr+1/+2/+3`、2B transfer 的合法 offset；执行短 burst write -> read。 | beat address checker 期望第 0 拍使用 unaligned 起始地址，后续 beat 按 aligned stride 推进；byte-lane checker 期望首拍 lane 与 offset 匹配，后续无数据错位。 | unaligned 只对 INCR 有明确高价值；把它扩展到所有 type 会制造低收益组合。该 testcase 保留关键风险，避免冗余。 |
+| `tc_long_incr_smoke` | 属于 `axicb_burst_long_vseq`。选少量 32/64/128/256 beat INCR case，不做 type/size 全组合；使用固定 seed data pattern，并限制 outstanding，确保失败可复现。 | timeout checker 确认不会挂死；response checker 统计 B/R 数量和最后一拍 `LAST`；data checker 可全量或抽样比对，并在失败 log 打印 beat index。 | 长 burst 主要打计数器、buffer、`LAST` 和 timeout 风险，和三种 type foundation 目标不同；保持 smoke 规模即可，避免 directed case 爆炸。 |
+| `tc_region_edge_burst_policy` | 属于 gated `axicb_burst_region_policy_vseq`。先作为 review testcase：列出从 `0x0000_FFFx` 发起并可能跨到 `0x0001_0000` 的 INCR/WRAP case，等待 spec 明确 crossbar 是否允许跨 slave window burst。澄清后再实现为 directed task。 | 若 spec 定义禁止跨 window，checker 期待 DECERR 或拒绝策略且无 downstream 泄漏；若 spec 定义按起始地址路由，checker 确认整个 burst 固定到起始地址 decode 的 slave。未澄清前不进入 regression pass/fail。 | 这是 crossbar 特有的关键 policy 风险，不能遗漏；但在 spec 未明确前不能写成硬性 pass/fail，否则 regression 结果没有可信度。 |
 
 #### 前置条件
 
 - scoreboard full-address 修正完成；
 - scoreboard 和 `axi_slave_mem` 的 beat address 计算通过 review；
-- WRAP 暂不进入此 pack，直到模型支持。
+- scoreboard、`axi_slave_mem`、sequence constraint 与 coverage 已支持 `FIXED/INCR/WRAP` 三种 burst type；
+- WRAP 合法性约束明确：只生成 2/4/8/16 beat，且起始地址满足 transfer size 对齐。
 
 #### 退出条件
 
-- `cg_burst` 覆盖 INCR/FIXED 与 1/2/4/8/16 beat；
+- `axicb_burst_type_vseq`、`axicb_burst_size_lane_vseq`、`axicb_burst_long_vseq` 均无 UVM ERROR/FATAL；
+- `cg_burst` 覆盖 `FIXED/INCR/WRAP` 与合法 length/size 组合；
+- `cg_wrap` 覆盖 WRAP 2/4/8/16 beat 与 boundary/non-boundary start offset；
 - `cg_wstrb_lane` 关键 bins 命中；
-- 多 beat readback 无 mismatch。
+- 多 beat readback 无 mismatch；
+- `axicb_burst_region_policy_vseq` 在 region-edge policy 明确前不计入 P3 active signoff。
 
 ### P4 - Concurrency / Ordering / Limit Pack
 

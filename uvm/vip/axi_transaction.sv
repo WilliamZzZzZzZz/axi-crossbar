@@ -98,7 +98,7 @@ class axi_transaction extends uvm_sequence_item;
                 BURST_LEN_8BEATS,
                 BURST_LEN_16BEATS
             };
-            (araddr % (1 << int'(awsize))) == 0;
+            (araddr % (1 << int'(arsize))) == 0;
         }
     }
     
