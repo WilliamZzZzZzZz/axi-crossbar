@@ -46,8 +46,10 @@ class axi_crossbar_env extends uvm_env;
         virt_sqr.vif_slv00 = slv_agent00.vif;
         virt_sqr.vif_slv01 = slv_agent01.vif;
         //scoreboard connection
-        mst_agent00.item_collected_port.connect(scb.analysis_export);
-        mst_agent01.item_collected_port.connect(scb.analysis_export);
+        mst_agent00.item_collected_port.connect(scb.mst00_export);
+        mst_agent01.item_collected_port.connect(scb.mst01_export);
+        slv_agent00.item_collected_port.connect(scb.slv00_export);
+        slv_agent01.item_collected_port.connect(scb.slv01_export);
         //coverage connection
         mst_agent00.item_collected_port.connect(cov.mst00_export);
         mst_agent01.item_collected_port.connect(cov.mst01_export);
