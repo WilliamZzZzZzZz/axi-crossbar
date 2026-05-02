@@ -8,7 +8,7 @@ class axicb_burst_base_vseq extends axicb_base_vseq;
     function new(string name = "axicb_burst_base_vseq");
         super.new(name);
     endfunction
-
+    
 
 endclass
 

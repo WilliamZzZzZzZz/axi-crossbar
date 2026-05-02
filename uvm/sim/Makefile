@@ -177,6 +177,9 @@ decerr_dual_mst: run ## Run the DECERR-dual-master test
 decode_full_range: TESTNAME = axicb_decode_full_range_test
 decode_full_range: run ## Run the DECODE-full-range test
 
+burst_type: TESTNAME = axicb_burst_type_test
+burst_type: run ## Run the BURST-type test
+
 ##@ Regression
 TESTS ?= smoke
 

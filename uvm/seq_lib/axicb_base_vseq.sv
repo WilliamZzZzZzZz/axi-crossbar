@@ -4,8 +4,14 @@
 class axicb_base_vseq extends uvm_sequence;
     `uvm_object_utils(axicb_base_vseq)
 
-    
-    bit [31:0] wr_val[]; 
+    bit [ADDR_WIDTH - 1:0] s0_base_addr = 32'h0000_0000;
+    bit [ADDR_WIDTH - 1:0] s0_mid_addr  = 32'h0000_8000;
+    bit [ADDR_WIDTH - 1:0] s0_end_addr  = 32'h0000_FFFC;
+    bit [ADDR_WIDTH - 1:0] s1_base_addr = 32'h0001_0000;
+    bit [ADDR_WIDTH - 1:0] s1_mid_addr  = 32'h0001_8000;
+    bit [ADDR_WIDTH - 1:0] s1_end_addr  = 32'h0001_FFFC; 
+
+    bit [31:0] wr_val[];   
     bit [31:0] rd_val[];
 
     axicb_single_write_sequence single_write;
