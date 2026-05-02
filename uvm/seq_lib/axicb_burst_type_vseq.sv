@@ -19,17 +19,25 @@ class axicb_burst_type_vseq extends axicb_burst_base_vseq;
 
     local task burst_foundation_3type();
         //FIXED
-        do_legal_write(0, s0_mid_addr, BURST_LEN_4BEATS, FIXED, BURST_SIZE_4BYTES, 8'hAB);
-        do_legal_read(0, s0_mid_addr, BURST_LEN_4BEATS, FIXED, BURST_SIZE_4BYTES, 8'hAB);
+        fixed_type_wr_rd(BURST_LEN_SINGLE);
+        fixed_type_wr_rd(BURST_LEN_2BEATS);
+        fixed_type_wr_rd(BURST_LEN_4BEATS);
+        fixed_type_wr_rd(BURST_LEN_8BEATS);
+        fixed_type_wr_rd(BURST_LEN_16BEATS);
         //INCR
-        do_legal_write(0, s1_mid_addr, BURST_LEN_4BEATS, INCR, BURST_SIZE_4BYTES, 8'hAB);
-        do_legal_read(0, s1_mid_addr, BURST_LEN_4BEATS, INCR, BURST_SIZE_4BYTES, 8'hAB);  
+        incr_type_wr_rd(BURST_LEN_SINGLE);
+        incr_type_wr_rd(BURST_LEN_2BEATS);
+        incr_type_wr_rd(BURST_LEN_4BEATS);
+        incr_type_wr_rd(BURST_LEN_8BEATS);
+        incr_type_wr_rd(BURST_LEN_16BEATS);
         //WRAP
-        do_legal_write(0, s1_mid_addr + 32'hC, BURST_LEN_4BEATS, WRAP, BURST_SIZE_4BYTES, 8'hAB);
-        do_legal_read(0, s1_mid_addr + 32'hC, BURST_LEN_4BEATS, WRAP, BURST_SIZE_4BYTES, 8'hAB);      
+        wrap_type_wr_rd(BURST_LEN_2BEATS);
+        wrap_type_wr_rd(BURST_LEN_4BEATS);
+        wrap_type_wr_rd(BURST_LEN_8BEATS);
+        wrap_type_wr_rd(BURST_LEN_16BEATS);
     endtask
-    
 
+    
 endclass
 
 `endif 
