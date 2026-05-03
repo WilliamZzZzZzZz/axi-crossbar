@@ -154,8 +154,10 @@ class axicb_coverage extends uvm_component;
         }
 
         WRAP_START_OFFSET: coverpoint wrap_start_offset iff (burst_type == WRAP) {
-            bins at_boundary = {0};
-            bins nonzero     = {[1:63]};
+            bins at_boundary    = {0};
+            bins early_quarter  = {[1:15]};
+            bins mid_half       = {[16:47]};
+            bins late_quarter   = {[48:63]};
         }
     endgroup
     

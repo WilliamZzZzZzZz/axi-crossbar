@@ -19,9 +19,9 @@ class axicb_burst_base_vseq extends axicb_base_vseq;
         do_legal_read(1, s1_mid_addr, burst_len, INCR, BURST_SIZE_4BYTES, 8'hAB);
     endtask
 
-    protected task wrap_type_wr_rd(burst_len_enum burst_len);
-        do_legal_write(1, s0_mid_addr + 32'hC, burst_len, WRAP, BURST_SIZE_4BYTES, 8'hAD);
-        do_legal_read(1, s0_mid_addr + 32'hC, burst_len, WRAP, BURST_SIZE_4BYTES, 8'hAD);
+    protected task wrap_type_wr_rd(burst_len_enum burst_len, bit [ADDR_WIDTH - 1:0] addr);
+        do_legal_write(1, addr, burst_len, WRAP, BURST_SIZE_4BYTES, 8'hAD);
+        do_legal_read(1, addr, burst_len, WRAP, BURST_SIZE_4BYTES, 8'hAD);
     endtask
     
 

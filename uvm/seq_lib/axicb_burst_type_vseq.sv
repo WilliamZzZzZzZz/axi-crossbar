@@ -30,11 +30,11 @@ class axicb_burst_type_vseq extends axicb_burst_base_vseq;
         incr_type_wr_rd(BURST_LEN_4BEATS);
         incr_type_wr_rd(BURST_LEN_8BEATS);
         incr_type_wr_rd(BURST_LEN_16BEATS);
-        //WRAP
-        wrap_type_wr_rd(BURST_LEN_2BEATS);
-        wrap_type_wr_rd(BURST_LEN_4BEATS);
-        wrap_type_wr_rd(BURST_LEN_8BEATS);
-        wrap_type_wr_rd(BURST_LEN_16BEATS);
+        //WRAP 0/4/8/C 10/14/18/1C 20/24/28/2C 30/34/38/3C
+        wrap_type_wr_rd(BURST_LEN_2BEATS, s1_base_addr);
+        wrap_type_wr_rd(BURST_LEN_4BEATS, s1_base_addr + 32'hC);
+        wrap_type_wr_rd(BURST_LEN_8BEATS, s1_base_addr + 32'h1C);
+        wrap_type_wr_rd(BURST_LEN_16BEATS, s1_base_addr + 32'h3C);
     endtask
 
     
