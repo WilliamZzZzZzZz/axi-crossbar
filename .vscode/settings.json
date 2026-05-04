@@ -1,0 +1,71 @@
+{
+    "files.associations": {
+        "*.sv": "systemverilog",
+        "*.svh": "systemverilog",
+        "*.v": "verilog",
+        "*.vh": "verilog"
+    },
+    "[systemverilog]": {
+        "editor.quickSuggestions": {
+            "other": "on",
+            "comments": "off",
+            "strings": "off"
+        },
+        "editor.quickSuggestionsDelay": 0,
+        "editor.suggest.snippetsPreventQuickSuggestions": false,
+        "editor.snippetSuggestions": "top",
+        "editor.suggest.showSnippets": true,
+        "editor.suggest.showKeywords": true,
+        "editor.suggest.showWords": true,
+        "editor.suggest.localityBonus": true,
+        "editor.suggestSelection": "first",
+        "editor.tabCompletion": "on",
+        "editor.wordBasedSuggestions": "allDocuments",
+        "editor.parameterHints.enabled": true
+    },
+    "[verilog]": {
+        "editor.quickSuggestions": {
+            "other": "on",
+            "comments": "off",
+            "strings": "off"
+        },
+        "editor.quickSuggestionsDelay": 0,
+        "editor.suggest.snippetsPreventQuickSuggestions": false,
+        "editor.snippetSuggestions": "top",
+        "editor.suggest.showSnippets": true,
+        "editor.suggest.showKeywords": true,
+        "editor.suggest.showWords": true,
+        "editor.suggest.localityBonus": true,
+        "editor.suggestSelection": "first",
+        "editor.tabCompletion": "on",
+        "editor.wordBasedSuggestions": "allDocuments",
+        "editor.parameterHints.enabled": true
+    },
+    "search.exclude": {
+        "**/.git": true,
+        "**/csrc": true,
+        "**/simv.daidir": true,
+        "**/verdiLog": true,
+        "**/work": true,
+        "**/xcelium.d": true,
+        "**/*.daidir": true,
+        "**/*.fsdb": true,
+        "**/*.vcd": true,
+        "**/*.vdb": true,
+        "**/*.wdb": true,
+        "**/*.log": true
+    },
+    "files.watcherExclude": {
+        "**/.git/**": true,
+        "**/csrc/**": true,
+        "**/simv.daidir/**": true,
+        "**/verdiLog/**": true,
+        "**/work/**": true,
+        "**/xcelium.d/**": true,
+        "**/*.daidir/**": true,
+        "**/*.fsdb": true,
+        "**/*.vcd": true,
+        "**/*.vdb": true,
+        "**/*.wdb": true
+    }
+}

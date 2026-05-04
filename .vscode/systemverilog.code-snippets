@@ -1,0 +1,192 @@
+{
+    "UVM info": {
+        "scope": "systemverilog,verilog",
+        "prefix": "uvi",
+        "body": [
+            "`uvm_info(get_type_name(), $sformatf(\"${1:message}\"), ${2:UVM_LOW})"
+        ],
+        "description": "Insert a concise uvm_info call"
+    },
+    "UVM error": {
+        "scope": "systemverilog,verilog",
+        "prefix": "uve",
+        "body": [
+            "`uvm_error(get_type_name(), $sformatf(\"${1:message}\"))"
+        ],
+        "description": "Insert a concise uvm_error call"
+    },
+    "UVM fatal": {
+        "scope": "systemverilog,verilog",
+        "prefix": "uvf",
+        "body": [
+            "`uvm_fatal(get_type_name(), $sformatf(\"${1:message}\"))"
+        ],
+        "description": "Insert a concise uvm_fatal call"
+    },
+    "UVM component utils": {
+        "scope": "systemverilog",
+        "prefix": "uvco",
+        "body": [
+            "`uvm_component_utils(${1:${TM_FILENAME_BASE}})"
+        ],
+        "description": "Insert uvm_component_utils"
+    },
+    "UVM object utils": {
+        "scope": "systemverilog",
+        "prefix": "uvo",
+        "body": [
+            "`uvm_object_utils(${1:${TM_FILENAME_BASE}})"
+        ],
+        "description": "Insert uvm_object_utils"
+    },
+    "UVM object class": {
+        "scope": "systemverilog",
+        "prefix": "uvmclass",
+        "body": [
+            "class ${1:${TM_FILENAME_BASE}} extends ${2:uvm_object};",
+            "",
+            "    `uvm_object_utils(${1:${TM_FILENAME_BASE}})",
+            "",
+            "    function new(string name = \"${1:${TM_FILENAME_BASE}}\");",
+            "        super.new(name);",
+            "    endfunction",
+            "",
+            "    ${0}",
+            "",
+            "endclass"
+        ],
+        "description": "Insert a complete UVM object class skeleton"
+    },
+    "UVM component class": {
+        "scope": "systemverilog",
+        "prefix": "uvmcomp",
+        "body": [
+            "class ${1:${TM_FILENAME_BASE}} extends ${2:uvm_component};",
+            "",
+            "    `uvm_component_utils(${1:${TM_FILENAME_BASE}})",
+            "",
+            "    function new(string name = \"${1:${TM_FILENAME_BASE}}\", uvm_component parent = null);",
+            "        super.new(name, parent);",
+            "    endfunction",
+            "",
+            "    ${0}",
+            "",
+            "endclass"
+        ],
+        "description": "Insert a complete UVM component class skeleton"
+    },
+    "AXICB virtual sequence": {
+        "scope": "systemverilog",
+        "prefix": "vseq",
+        "body": [
+            "class ${1:${TM_FILENAME_BASE}} extends ${2:axicb_base_vseq};",
+            "",
+            "    `uvm_object_utils(${1:${TM_FILENAME_BASE}})",
+            "",
+            "    function new(string name = \"${1:${TM_FILENAME_BASE}}\");",
+            "        super.new(name);",
+            "    endfunction",
+            "",
+            "    virtual task body();",
+            "        super.body();",
+            "        ${0}",
+            "    endtask",
+            "",
+            "endclass"
+        ],
+        "description": "Insert an AXICB virtual sequence skeleton"
+    },
+    "SV task": {
+        "scope": "systemverilog,verilog",
+        "prefix": "task",
+        "body": [
+            "${1:virtual }task ${2:my_task}(${3});",
+            "    ${0}",
+            "endtask"
+        ],
+        "description": "Insert a concise task block"
+    },
+    "SV local task": {
+        "scope": "systemverilog,verilog",
+        "prefix": "ltask",
+        "body": [
+            "local task ${1:my_task}(${2});",
+            "    ${0}",
+            "endtask"
+        ],
+        "description": "Insert a local task block"
+    },
+    "SV function": {
+        "scope": "systemverilog,verilog",
+        "prefix": "func",
+        "body": [
+            "function ${1:void} ${2:my_function}(${3});",
+            "    ${0}",
+            "endfunction"
+        ],
+        "description": "Insert a concise function block"
+    },
+    "SV local function": {
+        "scope": "systemverilog,verilog",
+        "prefix": "lfunc",
+        "body": [
+            "local function ${1:void} ${2:my_function}(${3});",
+            "    ${0}",
+            "endfunction"
+        ],
+        "description": "Insert a local function block"
+    },
+    "SV covergroup": {
+        "scope": "systemverilog",
+        "prefix": "cg",
+        "body": [
+            "covergroup ${1:cg_name};",
+            "    option.per_instance = 1;",
+            "",
+            "    ${0}",
+            "endgroup"
+        ],
+        "description": "Insert a covergroup block"
+    },
+    "SV coverpoint": {
+        "scope": "systemverilog",
+        "prefix": "cp",
+        "body": [
+            "${1:CP_NAME}: coverpoint ${2:signal} {",
+            "    bins ${3:bin_name} = {${4:value}};",
+            "}"
+        ],
+        "description": "Insert a coverpoint block"
+    },
+    "SV enum typedef": {
+        "scope": "systemverilog",
+        "prefix": "enum",
+        "body": [
+            "typedef enum ${1:bit[1:0]} {",
+            "    ${2:ITEM0},",
+            "    ${3:ITEM1}",
+            "} ${4:my_enum_t};"
+        ],
+        "description": "Insert a typedef enum block"
+    },
+    "SV constraint": {
+        "scope": "systemverilog",
+        "prefix": "constraint",
+        "body": [
+            "constraint ${1:c_name} {",
+            "    ${0}",
+            "}"
+        ],
+        "description": "Insert a constraint block"
+    },
+    "SV foreach": {
+        "scope": "systemverilog",
+        "prefix": "foreach",
+        "body": [
+            "foreach (${1:array}[${2:i}]) begin",
+            "    ${0}",
+            "end"
+        ],
+        "description": "Insert a foreach block"
+    }
+}

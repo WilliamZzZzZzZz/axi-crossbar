@@ -81,6 +81,7 @@ class axicb_base_vseq extends uvm_sequence;
         wr_data = new[beat_num];
         wr_seq.every_beat_data  = new[beat_num];
         wr_seq.every_beat_wstrb = new[beat_num];
+        //deal with every beat's data and strb
         foreach(wr_data[i]) begin
             if(!std::randomize(rand_data))
                 `uvm_fatal(get_type_name(), "data randomization FAILED!")
