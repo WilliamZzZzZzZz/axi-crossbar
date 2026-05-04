@@ -87,7 +87,7 @@ class axicb_base_vseq extends uvm_sequence;
                 `uvm_fatal(get_type_name(), "data randomization FAILED!")
             wr_data[i]                 = rand_data;
             wr_seq.every_beat_data[i]  = rand_data;
-            wr_seq.every_beat_wstrb[i] = 4'hF;
+            // wr_seq.every_beat_wstrb[i] = 4'hF;
         end
         wr_seq.data = wr_data[0];
         wr_seq.start(p_sequencer);
