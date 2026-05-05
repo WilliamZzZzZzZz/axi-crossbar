@@ -5,7 +5,7 @@ SNPSLMD_LICENSE_FILE ?= $(LM_LICENSE_FILE)
 export LM_LICENSE_FILE
 export SNPSLMD_LICENSE_FILE
 .DEFAULT_GOAL := help
-.PHONY: help prepare comp elab run smoke decerr regress regress_cov mergecov dvecov verdicov htmlcov check checkinfo show killdve clean
+.PHONY: help prepare comp elab run smoke decerr regress regress_cov all_cov mergecov dvecov verdicov htmlcov check checkinfo show killdve clean
 # --- Agent 仿真双重保险配置结束 ---
 
 help: ## Show grouped help for simulation targets
@@ -41,6 +41,7 @@ help: ## Show grouped help for simulation targets
 		print "  make smoke"; \
 		print "  make run T=decerr GUI=1"; \
 		print "  make regress COV=1"; \
+		print "  make all_cov"; \
 		print "  make check error"; \
 		print "  make checkinfo axicb_smoke_virtual_sequence"; \
 		print "  make show vseq"; \
@@ -182,6 +183,7 @@ burst_type: run ## Run the BURST-type test
 
 ##@ Regression
 TESTS ?= smoke
+TEST_TARGETS := $(shell awk -F: '/^[A-Za-z0-9_.-]+:[[:space:]]*TESTNAME[[:space:]]*=/{print $$1}' $(MAKEFILE_LIST))
 
 regress: ## Run each test listed in TESTS with the current knobs
 	@for t in $(TESTS); do \
@@ -195,6 +197,14 @@ regress_cov: ## Run TESTS with coverage enabled, then merge the databases
 		$(MAKE) $$t COV=1 || exit 1; \
 	done
 	$(MAKE) mergecov
+
+all_cov: ## Run all Makefile-registered tests with coverage enabled, then merge
+	@if [ -z "$(strip $(TEST_TARGETS))" ]; then \
+		echo "No test targets found. Add targets like '<name>: TESTNAME = axicb_<name>_test' under ##@ Tests."; \
+		exit 1; \
+	fi
+	@echo "===== Running all coverage tests: $(TEST_TARGETS) ====="
+	$(MAKE) regress_cov TESTS="$(TEST_TARGETS)" COV=1
 
 ##@ Coverage
 mergecov: ## Merge coverage data in $(CM_DIR) with urg
@@ -253,7 +263,7 @@ show: ## Show generated lists: make show <vseq|test>
 				| sed 's/::type_id::create//' \
 				| sort -u ;; \
 		test) \
-			awk -F: '/^[A-Za-z0-9_.-]+:[[:space:]]*TESTNAME[[:space:]]*=/{print $$1}' $(MAKEFILE_LIST) ;; \
+			printf '%s\n' $(TEST_TARGETS) ;; \
 		*) \
 			echo "Unknown show topic: $(SHOW_KIND)"; \
 			echo "Usage: make show <vseq|test>"; \
