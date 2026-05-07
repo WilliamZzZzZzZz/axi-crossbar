@@ -14,6 +14,7 @@ class axicb_burst_type_vseq extends axicb_burst_base_vseq;
         `uvm_info(get_type_name(), "========== axicb_burst_type_test_start ==========", UVM_LOW)
         burst_foundation_3type(BURST_SIZE_4BYTES);
         foundation_3type_size(BURST_LEN_4BEATS);
+        long_burst_len_incr();
 
         `uvm_info(get_type_name(), "========== axicb_burst_type_test_start ==========", UVM_LOW)
     endtask
@@ -51,6 +52,13 @@ class axicb_burst_type_vseq extends axicb_burst_base_vseq;
         wrap_type_wr_rd(burst_len, s1_mid_addr, BURST_SIZE_1BYTE);
         wrap_type_wr_rd(burst_len, s1_mid_addr, BURST_SIZE_2BYTES);
         wrap_type_wr_rd(burst_len, s1_mid_addr, BURST_SIZE_4BYTES);
+    endtask
+
+    local task long_burst_len_incr();
+        incr_type_wr_rd(BURST_LEN_32BEATS, BURST_SIZE_4BYTES);
+        incr_type_wr_rd(BURST_LEN_64BEATS, BURST_SIZE_4BYTES);
+        incr_type_wr_rd(BURST_LEN_128BEATS, BURST_SIZE_4BYTES);
+        incr_type_wr_rd(BURST_LEN_256BEATS, BURST_SIZE_4BYTES);
     endtask
     
 endclass
