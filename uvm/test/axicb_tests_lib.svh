@@ -9,10 +9,7 @@
 `include "axicb_decerr_dual_mst_test.sv"
 `include "axicb_decode_full_range_test.sv"
 `include "axicb_burst_type_test.sv"
-// `include "axiram_fixed_test.sv"
-// `include "axiram_unaligned_test.sv"
-// `include "axiram_narrow_test.sv"
-// `include "axiram_reset_test.sv"
-// `include "axiram_pipeline_test.sv"
+`include "axicb_conc_arb_test.sv"
+
 
 `endif 

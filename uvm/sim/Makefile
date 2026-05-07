@@ -181,6 +181,9 @@ decode_full_range: run ## Run the DECODE-full-range test
 burst_type: TESTNAME = axicb_burst_type_test
 burst_type: run ## Run the BURST-type test
 
+conc_arb: TESTNAME = axicb_conc_arb_test
+conc_arb: run ## Run the CONC-arb test
+
 ##@ Regression
 TESTS ?= smoke
 TEST_TARGETS := $(shell awk -F: '/^[A-Za-z0-9_.-]+:[[:space:]]*TESTNAME[[:space:]]*=/{print $$1}' $(MAKEFILE_LIST))
