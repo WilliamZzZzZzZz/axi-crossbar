@@ -30,7 +30,7 @@ class axicb_conc_arb_vseq extends axicb_conc_base_vseq;
     local task same_slv_read_contention();
         fork
             expect_same_slave_ar_contention(1);
-            expect_downstream_w_burst_integrity(1);
+            expect_downstream_r_burst_integrity(1);
             do_legal_read(0, s1_base_addr, BURST_LEN_4BEATS, INCR, BURST_SIZE_4BYTES, 8'hAC);
             do_legal_read(1, s1_mid_addr, BURST_LEN_4BEATS, INCR, BURST_SIZE_4BYTES, 8'hAC);
         join

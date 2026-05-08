@@ -90,15 +90,52 @@ class axicb_conc_base_vseq extends axicb_base_vseq;
         input int unsigned expected_bursts = 2,
         input int unsigned timeout_cycles = 1000
     );
+        expect_downstream_burst_integrity(WRITE, slv_idx, expected_bursts, timeout_cycles);
+    endtask
+
+    protected task automatic expect_downstream_r_burst_integrity(
+        input int unsigned slv_idx,
+        input int unsigned expected_bursts = 2,
+        input int unsigned timeout_cycles = 1000
+    );
+        expect_downstream_burst_integrity(READ, slv_idx, expected_bursts, timeout_cycles);
+    endtask
+
+    protected task automatic expect_downstream_burst_integrity(
+        input trans_type_enum txn_type,
+        input int unsigned    slv_idx,
+        input int unsigned    expected_bursts = 2,
+        input int unsigned    timeout_cycles = 1000
+    );
         virtual axi_if#(.ID_WIDTH(M_ID_WIDTH)) vif_slv;
         int unsigned beat_q[$];
         int unsigned exp_beats;
         int unsigned beat_idx;
         int unsigned checked_bursts;
         bit active;
+        bit addr_hs;
+        bit data_hs;
+        bit last;
+        string addr_chan;
+        string data_chan;
+        string last_name;
 
         if (expected_bursts == 0)
             `uvm_fatal(get_type_name(), "expected_bursts must be greater than 0")
+
+        case (txn_type)
+            WRITE: begin
+                addr_chan = "AW";
+                data_chan = "W";
+                last_name = "WLAST";
+            end
+            READ: begin
+                addr_chan = "AR";
+                data_chan = "R";
+                last_name = "RLAST";
+            end
+            default: `uvm_fatal(get_type_name(), "unsupported transaction type for burst integrity checker")
+        endcase
 
         case (slv_idx)
             0: vif_slv = vif_slv00;
@@ -115,13 +152,29 @@ class axicb_conc_base_vseq extends axicb_base_vseq;
                 continue;
             end
 
-            if (vif_slv.monitor_cb.awvalid && vif_slv.monitor_cb.awready)
-                beat_q.push_back(int'(vif_slv.monitor_cb.awlen) + 1);
+            case (txn_type)
+                WRITE: begin
+                    addr_hs = vif_slv.monitor_cb.awvalid && vif_slv.monitor_cb.awready;
+                    data_hs = vif_slv.monitor_cb.wvalid  && vif_slv.monitor_cb.wready;
+                    last    = vif_slv.monitor_cb.wlast;
+                    if (addr_hs)
+                        beat_q.push_back(int'(vif_slv.monitor_cb.awlen) + 1);
+                end
+                READ: begin
+                    addr_hs = vif_slv.monitor_cb.arvalid && vif_slv.monitor_cb.arready;
+                    data_hs = vif_slv.monitor_cb.rvalid  && vif_slv.monitor_cb.rready;
+                    last    = vif_slv.monitor_cb.rlast;
+                    if (addr_hs)
+                        beat_q.push_back(int'(vif_slv.monitor_cb.arlen) + 1);
+                end
+            endcase
 
-            if (vif_slv.monitor_cb.wvalid && vif_slv.monitor_cb.wready) begin
+            if (data_hs) begin
                 if (!active) begin
                     if (beat_q.size() == 0) begin
-                        `uvm_error(get_type_name(), $sformatf("slv%0d W beat observed before downstream AW", slv_idx))
+                        `uvm_error(get_type_name(),
+                                   $sformatf("slv%0d %s beat observed before downstream %s",
+                                             slv_idx, data_chan, addr_chan))
                         return;
                     end
                     exp_beats = beat_q.pop_front();
@@ -129,24 +182,26 @@ class axicb_conc_base_vseq extends axicb_base_vseq;
                     active = 1;
                 end
 
-                if (beat_idx < exp_beats - 1 && vif_slv.monitor_cb.wlast) begin
-                    `uvm_error(get_type_name(), $sformatf("slv%0d WLAST early: beat=%0d exp_last=%0d",
-                                                          slv_idx, beat_idx, exp_beats - 1))
+                if (beat_idx < exp_beats - 1 && last) begin
+                    `uvm_error(get_type_name(),
+                               $sformatf("slv%0d %s early: beat=%0d exp_last=%0d",
+                                         slv_idx, last_name, beat_idx, exp_beats - 1))
                     return;
                 end
 
                 if (beat_idx == exp_beats - 1) begin
-                    if (!vif_slv.monitor_cb.wlast) begin
-                        `uvm_error(get_type_name(), $sformatf("slv%0d WLAST missing on beat=%0d",
-                                                              slv_idx, beat_idx))
+                    if (!last) begin
+                        `uvm_error(get_type_name(),
+                                   $sformatf("slv%0d %s missing on beat=%0d",
+                                             slv_idx, last_name, beat_idx))
                         return;
                     end
                     checked_bursts++;
                     active = 0;
                     if (checked_bursts >= expected_bursts) begin
                         `uvm_info(get_type_name(),
-                                  $sformatf("downstream W burst integrity observed on slv%0d for %0d burst(s)",
-                                            slv_idx, checked_bursts),
+                                  $sformatf("downstream %s burst integrity observed on slv%0d for %0d burst(s)",
+                                            data_chan, slv_idx, checked_bursts),
                                   UVM_LOW)
                         return;
                     end
@@ -157,8 +212,8 @@ class axicb_conc_base_vseq extends axicb_base_vseq;
         end
 
         `uvm_error(get_type_name(),
-                   $sformatf("downstream W burst integrity not completed on slv%0d: checked=%0d exp=%0d",
-                             slv_idx, checked_bursts, expected_bursts))
+                   $sformatf("downstream %s burst integrity not completed on slv%0d: checked=%0d exp=%0d",
+                             data_chan, slv_idx, checked_bursts, expected_bursts))
     endtask
 
     //return which slave with addr
