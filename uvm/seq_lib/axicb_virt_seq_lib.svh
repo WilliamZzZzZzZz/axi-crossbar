@@ -15,6 +15,7 @@
 `include "axicb_decode_full_range_vseq.sv"
 `include "axicb_burst_type_vseq.sv"
 `include "axicb_conc_arb_vseq.sv"
+`include "axicb_order_resp_vseq.sv"
 
 
 `endif 

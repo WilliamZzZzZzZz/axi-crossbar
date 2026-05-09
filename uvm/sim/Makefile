@@ -184,6 +184,9 @@ burst_type: run ## Run the BURST-type test
 conc_arb: TESTNAME = axicb_conc_arb_test
 conc_arb: run ## Run the CONC-arb test
 
+order_resp: TESTNAME = axicb_order_resp_test
+order_resp: run ## Run the CONC-orer-resp test
+
 ##@ Regression
 TESTS ?= smoke
 TEST_TARGETS := $(shell awk -F: '/^[A-Za-z0-9_.-]+:[[:space:]]*TESTNAME[[:space:]]*=/{print $$1}' $(MAKEFILE_LIST))

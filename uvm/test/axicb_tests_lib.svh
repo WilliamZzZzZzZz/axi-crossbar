@@ -10,6 +10,7 @@
 `include "axicb_decode_full_range_test.sv"
 `include "axicb_burst_type_test.sv"
 `include "axicb_conc_arb_test.sv"
+`include "axicb_order_resp_test.sv"
 
 
 `endif 

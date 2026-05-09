@@ -15,7 +15,7 @@ class axicb_conc_arb_vseq extends axicb_conc_base_vseq;
         arbiter_contention_test();
         round_robin_grant_fairness_test();
 
-        `uvm_info(get_type_name(), "========== conc_arb_range_test_end ==========", UVM_LOW)
+        `uvm_info(get_type_name(), "========== conc_arb_test_end ==========", UVM_LOW)
     endtask
 
     local task arbiter_contention_test();
