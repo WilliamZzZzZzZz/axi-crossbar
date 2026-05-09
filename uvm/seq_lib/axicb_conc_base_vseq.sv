@@ -43,6 +43,33 @@ class axicb_conc_base_vseq extends axicb_base_vseq;
     );
         expect_downstream_burst_integrity(READ, slv_idx, expected_bursts, timeout_cycles);
     endtask
+
+    protected function void set_slave_b_resp_delay(
+        input int unsigned slv_idx,
+        input int unsigned delay_cycles
+    );
+        if (p_sequencer == null)
+            `uvm_fatal(get_type_name(), "p_sequencer is null")
+        if (p_sequencer.cfg == null)
+            `uvm_fatal(get_type_name(), "virtual sequencer cfg is null")
+        if (slv_idx >= S_COUNT)
+            `uvm_fatal(get_type_name(), $sformatf("invalid slave index: %0d", slv_idx))
+
+        p_sequencer.cfg.slv_b_resp_delay_cycles[slv_idx] = delay_cycles;
+        `uvm_info(get_type_name(),
+                  $sformatf("set slv%0d B response delay to %0d cycle(s)",
+                            slv_idx, delay_cycles),
+                  UVM_LOW)
+    endfunction
+
+    protected function void clear_slave_b_resp_delay(input int unsigned slv_idx);
+        set_slave_b_resp_delay(slv_idx, 0);
+    endfunction
+
+    protected function void clear_all_slave_b_resp_delay();
+        for (int i = 0; i < S_COUNT; i++)
+            set_slave_b_resp_delay(i, 0);
+    endfunction
     
     //arbiter's Round-Robin check, check downstream whether appear the same count of each master's tr
     protected task automatic expect_downstream_rr_grant_fairness(
@@ -120,6 +147,87 @@ class axicb_conc_base_vseq extends axicb_base_vseq;
         `uvm_error(get_type_name(),
                    $sformatf("downstream %s RR grant fairness not completed on slv%0d: m0=%0d m1=%0d exp_each=%0d",
                              chan, slv_idx, grant_cnt[0], grant_cnt[1], expected_per_master))
+    endtask
+
+    //check upstream accepted-but-not-completed(outstanding) transaction depth
+    protected task automatic expect_upstream_outstanding_depth(
+        input trans_type_enum txn_type,
+        input int unsigned    mst_idx,
+        input int unsigned    expected_depth,
+        input int unsigned    timeout_cycles = 1000
+    );
+        virtual axi_if#(.ID_WIDTH(ID_WIDTH)) vif_mst;
+        int unsigned curr_depth;
+        int unsigned next_depth;
+        int unsigned max_depth;
+        bit start_hs;
+        bit done_hs;
+        string txn_name;
+
+        if (expected_depth == 0)
+            `uvm_fatal(get_type_name(), "expected_depth must be greater than 0")
+
+        case (txn_type)
+            WRITE: txn_name = "WRITE";
+            READ:  txn_name = "READ";
+            default: `uvm_fatal(get_type_name(), "unsupported transaction type for outstanding checker")
+        endcase
+
+        case (mst_idx)
+            0: vif_mst = vif_mst00;
+            1: vif_mst = vif_mst01;
+            default: `uvm_fatal(get_type_name(), $sformatf("invalid master index: %0d", mst_idx))
+        endcase
+
+        repeat (timeout_cycles) begin
+            @(vif_mst.monitor_cb);
+            if (vif_mst.arst) begin
+                curr_depth = 0;
+                max_depth  = 0;
+                continue;
+            end
+
+            case (txn_type)
+                WRITE: begin
+                    start_hs = vif_mst.monitor_cb.awvalid && vif_mst.monitor_cb.awready;
+                    done_hs  = vif_mst.monitor_cb.bvalid  && vif_mst.monitor_cb.bready;
+                end
+                READ: begin
+                    start_hs = vif_mst.monitor_cb.arvalid && vif_mst.monitor_cb.arready;
+                    done_hs  = vif_mst.monitor_cb.rvalid  && vif_mst.monitor_cb.rready &&
+                               vif_mst.monitor_cb.rlast;
+                end
+            endcase
+
+            next_depth = curr_depth;
+            if (start_hs)
+                next_depth++;
+            if (done_hs) begin
+                if (next_depth == 0) begin
+                    `uvm_error(get_type_name(),
+                               $sformatf("master%0d %s completion observed before request",
+                                         mst_idx, txn_name))
+                    return;
+                end
+                next_depth--;
+            end
+
+            curr_depth = next_depth;
+            if (curr_depth > max_depth)
+                max_depth = curr_depth;
+
+            if (max_depth >= expected_depth) begin
+                `uvm_info(get_type_name(),
+                          $sformatf("master%0d upstream %s outstanding depth reached %0d",
+                                    mst_idx, txn_name, max_depth),
+                          UVM_LOW)
+                return;
+            end
+        end
+
+        `uvm_error(get_type_name(),
+                   $sformatf("master%0d upstream %s outstanding depth not reached: max=%0d exp=%0d",
+                             mst_idx, txn_name, max_depth, expected_depth))
     endtask
 
     local task automatic expect_same_slave_addr_contention(
@@ -302,114 +410,6 @@ class axicb_conc_base_vseq extends axicb_base_vseq;
             return 1;
         return -1;
     endfunction
-
-    //do non-blocking write transaction
-    protected task automatic do_nblock_write(
-        int unsigned mst_idx,
-        bit [ADDR_WIDTH - 1:0] addr,
-        burst_len_enum burst_len,
-        burst_type_enum burst_type,
-        burst_size_enum burst_size,
-        bit [ID_WIDTH - 1:0] tr_id
-    );
-        axicb_single_write_sequence wr_seq;
-        int unsigned beat_num = int'(burst_len) + 1;
-        bit [DATA_WIDTH - 1:0] rand_data;
-        bit [DATA_WIDTH - 1:0] wr_data[];
-        bit [1:0] bresp;
-        bit [ID_WIDTH - 1:0] bid;        
-
-        wr_seq = axicb_single_write_sequence::type_id::create("wr_seq");
-        wr_seq.src_master_idx     = mst_idx;
-        wr_seq.addr               = addr;
-        wr_seq.burst_len          = burst_len;
-        wr_seq.burst_type         = burst_type;
-        wr_seq.burst_size         = burst_size;
-        wr_seq.wait_for_response  = 0;
-        wr_seq.expect_decerr      = 0;
-        wr_seq.awid               = tr_id;
-
-        wr_data = new[beat_num];
-        wr_seq.every_beat_data  = new[beat_num];
-        wr_seq.every_beat_wstrb = new[beat_num];
-        //deal with every beat's data and strb
-        foreach(wr_data[i]) begin
-            if(!std::randomize(rand_data))
-                `uvm_fatal(get_type_name(), "data randomization FAILED!")
-            wr_data[i]                 = rand_data;
-            wr_seq.every_beat_data[i]  = rand_data;
-            // wr_seq.every_beat_wstrb[i] = 4'hF;
-        end
-        wr_seq.data = wr_data[0];
-        wr_seq.start(p_sequencer);
-
-        bresp = wr_seq.bresp;
-        bid   = wr_seq.bid;
-
-        if(bresp == OKAY)
-            `uvm_info(get_type_name(), $sformatf("legal write OKAY: master%0d addr=%08h id=%08b beats=%0d", mst_idx, addr, tr_id, beat_num), UVM_LOW)
-        else
-            `uvm_error(get_type_name(), $sformatf("legal write expected OKAY, got bresp=%02b addr=%08h id=%08h", bresp, addr, tr_id))
-
-        if(wr_seq.awid != wr_seq.bid)
-            `uvm_error(get_type_name(), $sformatf("legal write ID FAILED: awid=%08h bid=%08h", wr_seq.awid, wr_seq.bid))
-    endtask
-
-    //do non-blocking read transaction
-    protected task automatic do_nblock_read(
-        int unsigned mst_idx,
-        bit [ADDR_WIDTH - 1:0] addr,
-        burst_len_enum burst_len,
-        burst_type_enum burst_type,
-        burst_size_enum burst_size,
-        bit [ID_WIDTH - 1:0] tr_id
-    );
-        axicb_single_read_sequence rd_seq;    
-        int unsigned beat_num = int'(burst_len) + 1;
-        bit resp_ok = 1;
-        bit [DATA_WIDTH - 1:0] rd_data[];
-        bit [1:0] rresp[];
-        bit [ID_WIDTH - 1:0] rid;
-        bit rlast;
-
-        rd_seq = axicb_single_read_sequence::type_id::create("rd_seq");
-        rd_seq.src_master_idx     = mst_idx;
-        rd_seq.addr               = addr;
-        rd_seq.burst_len          = burst_len;
-        rd_seq.burst_type         = burst_type;
-        rd_seq.burst_size         = burst_size;
-        rd_seq.wait_for_response  = 0;
-        rd_seq.expect_decerr      = 0;
-        rd_seq.arid               = tr_id;
-        rd_seq.start(p_sequencer);
-
-        rd_data = new[rd_seq.every_beat_data.size()];
-        rresp   = new[rd_seq.every_beat_rresp.size()];
-        foreach(rd_data[i]) rd_data[i] = rd_seq.every_beat_data[i];
-        foreach(rresp[i])   rresp[i]   = rd_seq.every_beat_rresp[i];
-        rid   = rd_seq.rid;
-        rlast = rd_seq.rlast;
-
-        if(rd_data.size() != beat_num)
-            `uvm_error(get_type_name(), $sformatf("legal read beat count FAILED: exp=%0d act=%0d", beat_num, rd_data.size()))
-
-        foreach(rresp[i]) begin
-            if(rresp[i] != OKAY) begin
-                resp_ok = 0;
-                `uvm_error(get_type_name(), $sformatf("legal read expected OKAY on beat[%0d], got rresp=%02b", i, rresp[i]))
-            end
-        end
-
-        if(resp_ok)
-            `uvm_info(get_type_name(), $sformatf("legal read OKAY: master%0d addr=%08h id=%08b beats=%0d", mst_idx, addr, tr_id, beat_num), UVM_LOW)
-
-        if(rd_seq.arid != rd_seq.rid)
-            `uvm_error(get_type_name(), $sformatf("legal read ID FAILED: arid=%08h rid=%08h", rd_seq.arid, rd_seq.rid))
-
-        if(rlast != 1'b1)
-            `uvm_error(get_type_name(), $sformatf("legal read RLAST FAILED: rlast=%0b", rlast))
-    endtask
-
 
 endclass
 

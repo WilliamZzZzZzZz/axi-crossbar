@@ -6,8 +6,9 @@ class axi_slave_agent extends uvm_agent;
 
     axi_configuration                       cfg;
     axi_slave_responder                     responder;
-    axi_monitor#(M_ID_WIDTH, 1)                monitor;
+    axi_monitor#(M_ID_WIDTH, 1)             monitor;
     virtual axi_if#(.ID_WIDTH(M_ID_WIDTH))  vif;
+    int unsigned                            slave_idx;
 
     uvm_analysis_port #(axi_transaction) item_collected_port;
 
@@ -33,7 +34,8 @@ class axi_slave_agent extends uvm_agent;
     function void connect_phase(uvm_phase phase);
         super.connect_phase(phase);
         responder.vif = vif;
-        responder.cfg = cfg;          
+        responder.cfg = cfg;
+        responder.slave_idx = slave_idx;
         monitor.vif = vif;
         monitor.cfg = cfg;
 

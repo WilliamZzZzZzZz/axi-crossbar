@@ -7,6 +7,7 @@ class axi_slave_write_responder extends uvm_object;
     virtual axi_if#(.ID_WIDTH(M_ID_WIDTH))  vif;
     axi_configuration                       cfg;
     axi_slave_mem                           mem;
+    int unsigned                            slave_idx;
 
     mailbox #(axi_transaction) aw2w_mbx;
     mailbox #(axi_transaction) w2b_mbx;
@@ -181,6 +182,11 @@ class axi_slave_write_responder extends uvm_object;
 
             tr.m_bid = tr.m_awid;
             tr.bid   = tr.awid;
+
+            //delay resp some cycles for testing dut's outstanding depth, default setting is 0
+            if (cfg.slv_b_resp_delay_cycles[slave_idx] != 0)
+                repeat (cfg.slv_b_resp_delay_cycles[slave_idx]) @(vif.slave_cb);
+
             //drive signals on bus before pull up valid
             @(vif.slave_cb);
             vif.slave_cb.bid    <= tr.m_bid;

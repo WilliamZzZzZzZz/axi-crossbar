@@ -158,6 +158,86 @@ class axicb_base_vseq extends uvm_sequence;
             `uvm_error(get_type_name(), $sformatf("legal read RLAST FAILED: rlast=%0b", rlast))
     endtask
 
+    //do non-blocking write transaction
+    protected task automatic do_nblock_write(
+        int unsigned mst_idx,
+        bit [ADDR_WIDTH - 1:0] addr,
+        burst_len_enum burst_len,
+        burst_type_enum burst_type,
+        burst_size_enum burst_size,
+        bit [ID_WIDTH - 1:0] tr_id
+    );
+        axicb_single_write_sequence wr_seq;
+        int unsigned beat_num = int'(burst_len) + 1;
+        bit [DATA_WIDTH - 1:0] rand_data;
+        bit [DATA_WIDTH - 1:0] wr_data[];
+        bit [1:0] bresp;
+        bit [ID_WIDTH - 1:0] bid;        
+
+        wr_seq = axicb_single_write_sequence::type_id::create("wr_seq");
+        wr_seq.src_master_idx     = mst_idx;
+        wr_seq.addr               = addr;
+        wr_seq.burst_len          = burst_len;
+        wr_seq.burst_type         = burst_type;
+        wr_seq.burst_size         = burst_size;
+        wr_seq.wait_for_response  = 0;
+        wr_seq.expect_decerr      = 0;
+        wr_seq.awid               = tr_id;
+
+        wr_data = new[beat_num];
+        wr_seq.every_beat_data  = new[beat_num];
+        wr_seq.every_beat_wstrb = new[beat_num];
+        //deal with every beat's data and strb
+        foreach(wr_data[i]) begin
+            if(!std::randomize(rand_data))
+                `uvm_fatal(get_type_name(), "data randomization FAILED!")
+            wr_data[i]                 = rand_data;
+            wr_seq.every_beat_data[i]  = rand_data;
+            // wr_seq.every_beat_wstrb[i] = 4'hF;
+        end
+        wr_seq.data = wr_data[0];
+        wr_seq.start(p_sequencer);
+
+        bresp = wr_seq.bresp;
+        bid   = wr_seq.bid;
+    endtask
+
+    //do non-blocking read transaction
+    protected task automatic do_nblock_read(
+        int unsigned mst_idx,
+        bit [ADDR_WIDTH - 1:0] addr,
+        burst_len_enum burst_len,
+        burst_type_enum burst_type,
+        burst_size_enum burst_size,
+        bit [ID_WIDTH - 1:0] tr_id
+    );
+        axicb_single_read_sequence rd_seq;    
+        int unsigned beat_num = int'(burst_len) + 1;
+        bit resp_ok = 1;
+        bit [DATA_WIDTH - 1:0] rd_data[];
+        bit [1:0] rresp[];
+        bit [ID_WIDTH - 1:0] rid;
+        bit rlast;
+
+        rd_seq = axicb_single_read_sequence::type_id::create("rd_seq");
+        rd_seq.src_master_idx     = mst_idx;
+        rd_seq.addr               = addr;
+        rd_seq.burst_len          = burst_len;
+        rd_seq.burst_type         = burst_type;
+        rd_seq.burst_size         = burst_size;
+        rd_seq.wait_for_response  = 0;
+        rd_seq.expect_decerr      = 0;
+        rd_seq.arid               = tr_id;
+        rd_seq.start(p_sequencer);
+
+        rd_data = new[rd_seq.every_beat_data.size()];
+        rresp   = new[rd_seq.every_beat_rresp.size()];
+        foreach(rd_data[i]) rd_data[i] = rd_seq.every_beat_data[i];
+        foreach(rresp[i])   rresp[i]   = rd_seq.every_beat_rresp[i];
+        rid   = rd_seq.rid;
+        rlast = rd_seq.rlast;
+    endtask
+
     virtual function bit compare_single_data(bit[31:0] val1, bit[31:0] val2);
         if(val1 === val2) begin
             `uvm_info("CMP-SUCCESS", $sformatf("val1 'h%0x === val2 'h%0x", val1, val2), UVM_LOW)

@@ -30,6 +30,8 @@ class axi_crossbar_env extends uvm_env;
         mst_agent01 = axi_master_agent::type_id::create("mst_agent01", this);
         slv_agent00 = axi_slave_agent::type_id::create("slv_agent00", this);
         slv_agent01 = axi_slave_agent::type_id::create("slv_agent01", this);
+        slv_agent00.slave_idx = 0;
+        slv_agent01.slave_idx = 1;
         
         virt_sqr = axicb_virtual_sequencer::type_id::create("virt_sqr", this);
         scb = axicb_scoreboard::type_id::create("scb", this);
@@ -40,6 +42,7 @@ class axi_crossbar_env extends uvm_env;
         super.connect_phase(phase);
 
         //sequencer connection
+        virt_sqr.cfg = cfg;
         virt_sqr.axi_mst_sqr00 = mst_agent00.sequencer;
         virt_sqr.axi_mst_sqr01 = mst_agent01.sequencer;
         //virtual interface connection
