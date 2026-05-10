@@ -257,6 +257,94 @@ class axicb_conc_base_vseq extends axicb_base_vseq;
                              mst_idx, txn_name, max_depth, expected_depth))
     endtask
 
+    //check how many unique active IDs exist on one upstream port
+    protected task automatic expect_upstream_unique_id_threads(
+        input trans_type_enum txn_type,
+        input int unsigned    mst_idx,
+        input int unsigned    expected_threads = 2,
+        input int unsigned    timeout_cycles = 1000
+    );
+        typedef bit [ID_WIDTH-1:0] id_t;
+        virtual axi_if#(.ID_WIDTH(ID_WIDTH)) vif_mst;
+        int unsigned active_count[id_t];
+        int unsigned max_threads;
+        bit start_hs;
+        bit done_hs;
+        id_t start_id;
+        id_t done_id;
+        string txn_name;
+
+        if (expected_threads == 0)
+            `uvm_fatal(get_type_name(), "expected_threads must be greater than 0")
+
+        case (mst_idx)
+            0: vif_mst = vif_mst00;
+            1: vif_mst = vif_mst01;
+            default: `uvm_fatal(get_type_name(), $sformatf("invalid master index: %0d", mst_idx))
+        endcase
+
+        case (txn_type)
+            WRITE: txn_name = "WRITE";
+            READ:  txn_name = "READ";
+            default: `uvm_fatal(get_type_name(), "unsupported transaction type for unique ID thread checker")
+        endcase
+
+        repeat (timeout_cycles) begin
+            @(vif_mst.monitor_cb);
+            if (vif_mst.arst) begin
+                active_count.delete();
+                max_threads = 0;
+                continue;
+            end
+
+            case (txn_type)
+                WRITE: begin
+                    start_hs = vif_mst.monitor_cb.awvalid && vif_mst.monitor_cb.awready;
+                    done_hs  = vif_mst.monitor_cb.bvalid  && vif_mst.monitor_cb.bready;
+                    start_id = vif_mst.monitor_cb.awid;
+                    done_id  = vif_mst.monitor_cb.bid;
+                end
+                READ: begin
+                    start_hs = vif_mst.monitor_cb.arvalid && vif_mst.monitor_cb.arready;
+                    done_hs  = vif_mst.monitor_cb.rvalid  && vif_mst.monitor_cb.rready &&
+                               vif_mst.monitor_cb.rlast;
+                    start_id = vif_mst.monitor_cb.arid;
+                    done_id  = vif_mst.monitor_cb.rid;
+                end
+            endcase
+
+            if (start_hs)
+                active_count[start_id]++;
+
+            if (done_hs) begin
+                if (!active_count.exists(done_id) || active_count[done_id] == 0) begin
+                    `uvm_error(get_type_name(),
+                               $sformatf("master%0d %s completion observed before tracked request: id=%0h",
+                                         mst_idx, txn_name, done_id))
+                    return;
+                end
+                active_count[done_id]--;
+                if (active_count[done_id] == 0)
+                    active_count.delete(done_id);
+            end
+
+            if (active_count.num() > max_threads)
+                max_threads = active_count.num();
+
+            if (max_threads >= expected_threads) begin
+                `uvm_info(get_type_name(),
+                          $sformatf("master%0d upstream %s unique ID threads reached %0d",
+                                    mst_idx, txn_name, max_threads),
+                          UVM_LOW)
+                return;
+            end
+        end
+
+        `uvm_error(get_type_name(),
+                   $sformatf("master%0d upstream %s unique ID threads not reached: max=%0d exp=%0d",
+                             mst_idx, txn_name, max_threads, expected_threads))
+    endtask
+
     local task automatic expect_same_slave_addr_contention(
         input trans_type_enum txn_type,
         input int unsigned    expected_slv,
