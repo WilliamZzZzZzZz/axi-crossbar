@@ -44,6 +44,72 @@ class axicb_conc_base_vseq extends axicb_base_vseq;
         expect_downstream_burst_integrity(READ, slv_idx, expected_bursts, timeout_cycles);
     endtask
 
+    //check same-ID write cannot switch to another slave before the first response
+    protected task automatic expect_same_id_diff_slave_aw_block(
+        input int unsigned          mst_idx,
+        input int unsigned          first_slv,
+        input int unsigned          blocked_slv,
+        input bit [ID_WIDTH-1:0]    exp_id,
+        input int unsigned          timeout_cycles = 1000
+    );
+        expect_same_id_diff_slave_addr_block(WRITE, mst_idx, first_slv, blocked_slv, exp_id, timeout_cycles);
+    endtask
+
+    //check same-ID read cannot switch to another slave before the first response
+    protected task automatic expect_same_id_diff_slave_ar_block(
+        input int unsigned          mst_idx,
+        input int unsigned          first_slv,
+        input int unsigned          blocked_slv,
+        input bit [ID_WIDTH-1:0]    exp_id,
+        input int unsigned          timeout_cycles = 1000
+    );
+        expect_same_id_diff_slave_addr_block(READ, mst_idx, first_slv, blocked_slv, exp_id, timeout_cycles);
+    endtask    
+
+    //drain helper for testcase boundary, count upstream transaction completions
+    protected task automatic wait_upstream_done(
+        input int unsigned expected_write,
+        input int unsigned expected_read,
+        input int unsigned timeout_cycles = 5000
+    );
+        int unsigned write_done;
+        int unsigned read_done;
+
+        if (expected_write == 0 && expected_read == 0)
+            `uvm_fatal(get_type_name(), "wait_upstream_done expects at least one completion")
+
+        repeat (timeout_cycles) begin
+            @(vif_mst00.monitor_cb);
+            if (vif_mst00.arst) begin
+                write_done = 0;
+                read_done  = 0;
+                continue;
+            end
+
+            if (vif_mst00.monitor_cb.bvalid && vif_mst00.monitor_cb.bready)
+                write_done++;
+            if (vif_mst01.monitor_cb.bvalid && vif_mst01.monitor_cb.bready)
+                write_done++;
+
+            if (vif_mst00.monitor_cb.rvalid && vif_mst00.monitor_cb.rready && vif_mst00.monitor_cb.rlast)
+                read_done++;
+            if (vif_mst01.monitor_cb.rvalid && vif_mst01.monitor_cb.rready && vif_mst01.monitor_cb.rlast)
+                read_done++;
+
+            if (write_done >= expected_write && read_done >= expected_read) begin
+                `uvm_info(get_type_name(),
+                          $sformatf("upstream done drained: write=%0d/%0d read=%0d/%0d",
+                                    write_done, expected_write, read_done, expected_read),
+                          UVM_LOW)
+                return;
+            end
+        end
+
+        `uvm_error(get_type_name(),
+                   $sformatf("upstream done drain timeout: write=%0d/%0d read=%0d/%0d",
+                             write_done, expected_write, read_done, expected_read))
+    endtask
+
     protected function void set_slave_b_resp_delay(
         input int unsigned slv_idx,
         input int unsigned delay_cycles
@@ -343,6 +409,119 @@ class axicb_conc_base_vseq extends axicb_base_vseq;
         `uvm_error(get_type_name(),
                    $sformatf("master%0d upstream %s unique ID threads not reached: max=%0d exp=%0d",
                              mst_idx, txn_name, max_threads, expected_threads))
+    endtask
+
+    local task automatic expect_same_id_diff_slave_addr_block(
+        input trans_type_enum       txn_type,
+        input int unsigned          mst_idx,
+        input int unsigned          first_slv,
+        input int unsigned          blocked_slv,
+        input bit [ID_WIDTH-1:0]    exp_id,
+        input int unsigned          timeout_cycles = 1000
+    );
+        virtual axi_if#(.ID_WIDTH(ID_WIDTH)) vif_mst;
+        bit first_active;
+        bit blocked_seen;
+        bit addr_hs;
+        bit done_hs;
+        bit first_req;
+        bit blocked_req;
+        string addr_chan;
+        string resp_chan;
+
+        if (first_slv >= S_COUNT || blocked_slv >= S_COUNT)
+            `uvm_fatal(get_type_name(), $sformatf("invalid slave index: first=%0d blocked=%0d", first_slv, blocked_slv))
+        if (first_slv == blocked_slv)
+            `uvm_fatal(get_type_name(), "first_slv and blocked_slv must be different")
+
+        case (mst_idx)
+            0: vif_mst = vif_mst00;
+            1: vif_mst = vif_mst01;
+            default: `uvm_fatal(get_type_name(), $sformatf("invalid master index: %0d", mst_idx))
+        endcase
+
+        case (txn_type)
+            WRITE: begin
+                addr_chan = "AW";
+                resp_chan = "B";
+            end
+            READ: begin
+                addr_chan = "AR";
+                resp_chan = "R";
+            end
+            default: `uvm_fatal(get_type_name(), "unsupported transaction type for same-ID different-slave block checker")
+        endcase
+
+        repeat (timeout_cycles) begin
+            @(vif_mst.monitor_cb);
+            if (vif_mst.arst) begin
+                first_active = 0;
+                blocked_seen = 0;
+                continue;
+            end
+
+            case (txn_type)
+                WRITE: begin
+                    addr_hs = vif_mst.monitor_cb.awvalid && vif_mst.monitor_cb.awready;
+                    done_hs = vif_mst.monitor_cb.bvalid  && vif_mst.monitor_cb.bready &&
+                              (vif_mst.monitor_cb.bid == exp_id);
+
+                    first_req = vif_mst.monitor_cb.awvalid &&
+                                (vif_mst.monitor_cb.awid == exp_id) &&
+                                (decode_slave(vif_mst.monitor_cb.awaddr) == int'(first_slv));
+                    blocked_req = vif_mst.monitor_cb.awvalid &&
+                                  (vif_mst.monitor_cb.awid == exp_id) &&
+                                  (decode_slave(vif_mst.monitor_cb.awaddr) == int'(blocked_slv));
+                end
+                READ: begin
+                    addr_hs = vif_mst.monitor_cb.arvalid && vif_mst.monitor_cb.arready;
+                    done_hs = vif_mst.monitor_cb.rvalid  && vif_mst.monitor_cb.rready &&
+                              vif_mst.monitor_cb.rlast &&
+                              (vif_mst.monitor_cb.rid == exp_id);
+
+                    first_req = vif_mst.monitor_cb.arvalid &&
+                                (vif_mst.monitor_cb.arid == exp_id) &&
+                                (decode_slave(vif_mst.monitor_cb.araddr) == int'(first_slv));
+                    blocked_req = vif_mst.monitor_cb.arvalid &&
+                                  (vif_mst.monitor_cb.arid == exp_id) &&
+                                  (decode_slave(vif_mst.monitor_cb.araddr) == int'(blocked_slv));
+                end
+            endcase
+
+            if (!first_active) begin
+                if (first_req && addr_hs)
+                    first_active = 1;
+                continue;
+            end
+
+            if (blocked_req) begin
+                blocked_seen = 1;
+                if (addr_hs) begin
+                    `uvm_error(get_type_name(),
+                               $sformatf("master%0d same-ID different-slave %s accepted before %s response: id=%0h first_slv=%0d blocked_slv=%0d",
+                                         mst_idx, addr_chan, resp_chan, exp_id, first_slv, blocked_slv))
+                    return;
+                end
+            end
+
+            if (done_hs) begin
+                if (!blocked_seen) begin
+                    `uvm_error(get_type_name(),
+                               $sformatf("master%0d same-ID different-slave %s block window not observed before %s response: id=%0h",
+                                         mst_idx, addr_chan, resp_chan, exp_id))
+                    return;
+                end
+                `uvm_info(get_type_name(),
+                          $sformatf("master%0d same-ID different-slave %s blocked until %s response: id=%0h first_slv=%0d blocked_slv=%0d",
+                                    mst_idx, addr_chan, resp_chan, exp_id, first_slv, blocked_slv),
+                          UVM_LOW)
+                return;
+            end
+        end
+
+        `uvm_error(get_type_name(),
+                   $sformatf("master%0d same-ID different-slave %s block check timeout: id=%0h first_active=%0b blocked_seen=%0b",
+                             mst_idx, addr_chan, exp_id, first_active, blocked_seen))
     endtask
 
     local task automatic expect_same_slave_addr_contention(

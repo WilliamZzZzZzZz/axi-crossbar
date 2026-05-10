@@ -14,20 +14,41 @@ class axicb_order_resp_vseq extends axicb_conc_base_vseq;
 
         threads_depth_test();
         outstanding_depth_test();
+        ordering_protection_test();
 
         `uvm_info(get_type_name(), "========== order_resp_test_end ==========", UVM_LOW)
     endtask
 
     //outstanding depth = min(S_ACCEPT=16, M_ISSUE=4), so test depth 4 is enough
     local task outstanding_depth_test();
-        same_id_same_slave_write_outstanding_accept(4);
-        same_id_same_slave_read_outstanding_accept(4);
+        fork
+            wait_upstream_done(4, 4);
+            begin
+                same_id_same_slave_write_outstanding_accept(4);
+                same_id_same_slave_read_outstanding_accept(4);
+            end
+        join
     endtask
 
     //S_THREADS=2, means upstream's slave port max allow 2 different ID transaction concurrently
     local task threads_depth_test();
-        unique_id_thread_write(2);
-        unique_id_thread_read(2);
+        fork
+            wait_upstream_done(2, 2);
+            begin
+                unique_id_thread_write(2);
+                unique_id_thread_read(2);
+            end
+        join
+    endtask
+
+    local task ordering_protection_test();
+        fork
+            wait_upstream_done(2, 2);
+            begin
+                same_id_diff_slave_write();
+                same_id_diff_slave_read();
+            end
+        join
     endtask
 
     local task same_id_same_slave_write_outstanding_accept(int unsigned tested_depth);
@@ -76,6 +97,29 @@ class axicb_order_resp_vseq extends axicb_conc_base_vseq;
         clear_slave_r_resp_delay(1);
     endtask
 
+    local task same_id_diff_slave_write();
+        set_slave_b_resp_delay(0, 100);
+        fork
+            expect_same_id_diff_slave_aw_block(0, 0, 1, 8'hA3);
+            begin
+                do_nblock_write(0, s0_mid_addr, BURST_LEN_4BEATS, INCR, BURST_SIZE_4BYTES, 8'hA3);
+                do_nblock_write(0, s1_mid_addr, BURST_LEN_4BEATS, INCR, BURST_SIZE_4BYTES, 8'hA3);            
+            end
+        join
+        clear_all_slave_b_resp_delay();
+    endtask
+
+    local task same_id_diff_slave_read();
+        set_slave_r_resp_delay(0, 100);
+        fork
+            expect_same_id_diff_slave_ar_block(0, 0, 1, 8'hA7);
+            begin
+                do_nblock_read(0, s0_mid_addr, BURST_LEN_4BEATS, INCR, BURST_SIZE_4BYTES, 8'hA7);
+                do_nblock_read(0, s1_mid_addr, BURST_LEN_4BEATS, INCR, BURST_SIZE_4BYTES, 8'hA7);            
+            end
+        join
+        clear_all_slave_r_resp_delay();
+    endtask
 endclass
 
 `endif 

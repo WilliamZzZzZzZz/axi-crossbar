@@ -5,6 +5,63 @@
         "*.v": "verilog",
         "*.vh": "verilog"
     },
+    "systemverilog.disableIndexing": false,
+    "systemverilog.includeIndexing": [
+        "dut/**/*.{v,vh,sv,svh}",
+        "uvm/vip/**/*.{v,vh,sv,svh}",
+        "uvm/env/**/*.{v,vh,sv,svh}",
+        "uvm/seq_lib/**/*.{v,vh,sv,svh}",
+        "uvm/test/**/*.{v,vh,sv,svh}",
+        "uvm/testbench/**/*.{v,vh,sv,svh}"
+    ],
+    "systemverilog.excludeIndexing": "**/{out,csrc,simv.daidir,verdiLog,work,xcelium.d,*.daidir}/**",
+    "systemverilog.forceFastIndexing": false,
+    "systemverilog.enableIncrementalIndexing": true,
+    "systemverilog.maxLineCountIndexing": 10000,
+    "systemverilog.documentSymbolsPrecision": "full",
+    "systemverilog.compilerType": "VCS",
+    "systemverilog.launchConfigurationVCS": "cd uvm/sim && make comp",
+    "verilog.linting.linter": "none",
+    "verilog.linting.verilator.includePath": [
+        "dut",
+        "uvm/vip",
+        "uvm/vip/seq_lib",
+        "uvm/env",
+        "uvm/seq_lib",
+        "uvm/seq_lib/element_seq",
+        "uvm/test",
+        "uvm/testbench"
+    ],
+    "verilog.linting.slang.includePath": [
+        "dut",
+        "uvm/vip",
+        "uvm/vip/seq_lib",
+        "uvm/env",
+        "uvm/seq_lib",
+        "uvm/seq_lib/element_seq",
+        "uvm/test",
+        "uvm/testbench"
+    ],
+    "verilog.linting.iverilog.includePath": [
+        "dut",
+        "uvm/vip",
+        "uvm/vip/seq_lib",
+        "uvm/env",
+        "uvm/seq_lib",
+        "uvm/seq_lib/element_seq",
+        "uvm/test",
+        "uvm/testbench"
+    ],
+    "verilog.linting.xvlog.includePath": [
+        "dut",
+        "uvm/vip",
+        "uvm/vip/seq_lib",
+        "uvm/env",
+        "uvm/seq_lib",
+        "uvm/seq_lib/element_seq",
+        "uvm/test",
+        "uvm/testbench"
+    ],
     "[systemverilog]": {
         "editor.quickSuggestions": {
             "other": "on",

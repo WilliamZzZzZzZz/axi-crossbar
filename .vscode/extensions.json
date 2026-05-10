@@ -1,5 +1,6 @@
 {
     "recommendations": [
-        "mshr-h.VerilogHDL"
+        "eirikpre.systemverilog",
+        "mshr-h.veriloghdl"
     ]
 }
