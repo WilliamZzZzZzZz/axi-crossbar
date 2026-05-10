@@ -70,6 +70,33 @@ class axicb_conc_base_vseq extends axicb_base_vseq;
         for (int i = 0; i < S_COUNT; i++)
             set_slave_b_resp_delay(i, 0);
     endfunction
+
+    protected function void set_slave_r_resp_delay(
+        input int unsigned slv_idx,
+        input int unsigned delay_cycles
+    );
+        if (p_sequencer == null)
+            `uvm_fatal(get_type_name(), "p_sequencer is null")
+        if (p_sequencer.cfg == null)
+            `uvm_fatal(get_type_name(), "virtual sequencer cfg is null")
+        if (slv_idx >= S_COUNT)
+            `uvm_fatal(get_type_name(), $sformatf("invalid slave index: %0d", slv_idx))
+
+        p_sequencer.cfg.slv_r_resp_delay_cycles[slv_idx] = delay_cycles;
+        `uvm_info(get_type_name(),
+                  $sformatf("set slv%0d R response delay to %0d cycle(s)",
+                            slv_idx, delay_cycles),
+                  UVM_LOW)
+    endfunction
+
+    protected function void clear_slave_r_resp_delay(input int unsigned slv_idx);
+        set_slave_r_resp_delay(slv_idx, 0);
+    endfunction
+
+    protected function void clear_all_slave_r_resp_delay();
+        for (int i = 0; i < S_COUNT; i++)
+            set_slave_r_resp_delay(i, 0);
+    endfunction
     
     //arbiter's Round-Robin check, check downstream whether appear the same count of each master's tr
     protected task automatic expect_downstream_rr_grant_fairness(

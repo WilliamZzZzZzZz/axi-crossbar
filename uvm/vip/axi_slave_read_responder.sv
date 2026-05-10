@@ -8,6 +8,7 @@ class axi_slave_read_responder extends uvm_object;
     virtual axi_if#(.ID_WIDTH(M_ID_WIDTH))  vif;
     axi_configuration                       cfg;
     axi_slave_mem                           mem;
+    int unsigned                            slave_idx;
 
     mailbox #(axi_transaction) ar2r_mbx;
 
@@ -93,6 +94,9 @@ class axi_slave_read_responder extends uvm_object;
 
                 tr.m_rid = tr.m_arid;
                 tr.rid   = tr.arid;
+
+                if (i == 0 && cfg.slv_r_resp_delay_cycles[slave_idx] != 0)
+                    repeat (cfg.slv_r_resp_delay_cycles[slave_idx]) @(vif.slave_cb);
 
                 //drive bus signals
                 @(vif.slave_cb);

@@ -31,6 +31,7 @@ class axi_slave_responder extends uvm_component;
         read_rpd.vif = vif;
         read_rpd.cfg = cfg;
         read_rpd.mem = mem;
+        read_rpd.slave_idx = slave_idx;
     endfunction
 
     task run_phase(uvm_phase phase);
@@ -42,6 +43,7 @@ class axi_slave_responder extends uvm_component;
         read_rpd.vif = vif;
         read_rpd.cfg = cfg;
         read_rpd.mem = mem;
+        read_rpd.slave_idx = slave_idx;
                 
         fork
             write_rpd.run_write_channels();

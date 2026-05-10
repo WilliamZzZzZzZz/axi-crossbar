@@ -11,7 +11,8 @@ class axi_configuration extends uvm_object;
 
     int handshake_timeout_cycles = 500;
     int idle_timeout_cycles = 5000;     //for slave AW and AR channel
-    int unsigned slv_b_resp_delay_cycles[S_COUNT];  //delay for testing dut's outstanding depth
+    int unsigned slv_b_resp_delay_cycles[S_COUNT];  //delay for testing dut's write outstanding depth
+    int unsigned slv_r_resp_delay_cycles[S_COUNT];  //delay for testing dut's read outstanding depth
 
     function new(string name = "axi_configuration");
         super.new(name);
