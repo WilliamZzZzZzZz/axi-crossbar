@@ -66,6 +66,28 @@ class axicb_conc_base_vseq extends axicb_base_vseq;
         expect_same_id_diff_slave_addr_block(READ, mst_idx, first_slv, blocked_slv, exp_id, timeout_cycles);
     endtask    
 
+    //check two downstream B responses contend for the same upstream master
+    protected task automatic expect_same_master_b_resp_contention(
+        input int unsigned mst_idx,
+        input int unsigned slv_a = 0,
+        input int unsigned slv_b = 1,
+        input int unsigned timeout_cycles = 1000,
+        input int unsigned min_hit_cycles = 1
+    );
+        expect_same_master_resp_contention(WRITE, mst_idx, slv_a, slv_b, timeout_cycles, min_hit_cycles);
+    endtask
+
+    //check two downstream R responses contend for the same upstream master
+    protected task automatic expect_same_master_r_resp_contention(
+        input int unsigned mst_idx,
+        input int unsigned slv_a = 0,
+        input int unsigned slv_b = 1,
+        input int unsigned timeout_cycles = 1000,
+        input int unsigned min_hit_cycles = 1
+    );
+        expect_same_master_resp_contention(READ, mst_idx, slv_a, slv_b, timeout_cycles, min_hit_cycles);
+    endtask
+
     //drain helper for testcase boundary, count upstream transaction completions
     protected task automatic wait_upstream_done(
         input int unsigned expected_write,
@@ -522,6 +544,87 @@ class axicb_conc_base_vseq extends axicb_base_vseq;
         `uvm_error(get_type_name(),
                    $sformatf("master%0d same-ID different-slave %s block check timeout: id=%0h first_active=%0b blocked_seen=%0b",
                              mst_idx, addr_chan, exp_id, first_active, blocked_seen))
+    endtask
+
+    local task automatic expect_same_master_resp_contention(
+        input trans_type_enum txn_type,
+        input int unsigned    mst_idx,
+        input int unsigned    slv_a,
+        input int unsigned    slv_b,
+        input int unsigned    timeout_cycles = 1000,
+        input int unsigned    min_hit_cycles = 1
+    );
+        virtual axi_if#(.ID_WIDTH(M_ID_WIDTH)) vif_a;
+        virtual axi_if#(.ID_WIDTH(M_ID_WIDTH)) vif_b;
+        int unsigned hit_cycles;
+        bit a_req;
+        bit b_req;
+        string chan;
+
+        if (mst_idx >= S_COUNT)
+            `uvm_fatal(get_type_name(), $sformatf("invalid master index: %0d", mst_idx))
+        if (slv_a >= S_COUNT || slv_b >= S_COUNT)
+            `uvm_fatal(get_type_name(), $sformatf("invalid slave index: slv_a=%0d slv_b=%0d", slv_a, slv_b))
+        if (slv_a == slv_b)
+            `uvm_fatal(get_type_name(), "slv_a and slv_b must be different")
+        if (min_hit_cycles == 0)
+            `uvm_fatal(get_type_name(), "min_hit_cycles must be greater than 0")
+
+        case (txn_type)
+            WRITE: chan = "B";
+            READ:  chan = "R";
+            default: `uvm_fatal(get_type_name(), "unsupported transaction type for response contention checker")
+        endcase
+
+        case (slv_a)
+            0: vif_a = vif_slv00;
+            1: vif_a = vif_slv01;
+            default: `uvm_fatal(get_type_name(), $sformatf("invalid slave index: %0d", slv_a))
+        endcase
+
+        case (slv_b)
+            0: vif_b = vif_slv00;
+            1: vif_b = vif_slv01;
+            default: `uvm_fatal(get_type_name(), $sformatf("invalid slave index: %0d", slv_b))
+        endcase
+
+        repeat (timeout_cycles) begin
+            @(vif_a.monitor_cb);
+            if (vif_a.arst || vif_b.arst) begin
+                hit_cycles = 0;
+                continue;
+            end
+
+            case (txn_type)
+                WRITE: begin
+                    a_req = vif_a.monitor_cb.bvalid &&
+                            (int'(vif_a.monitor_cb.bid[M_ID_WIDTH-1]) == mst_idx);
+                    b_req = vif_b.monitor_cb.bvalid &&
+                            (int'(vif_b.monitor_cb.bid[M_ID_WIDTH-1]) == mst_idx);
+                end
+                READ: begin
+                    a_req = vif_a.monitor_cb.rvalid &&
+                            (int'(vif_a.monitor_cb.rid[M_ID_WIDTH-1]) == mst_idx);
+                    b_req = vif_b.monitor_cb.rvalid &&
+                            (int'(vif_b.monitor_cb.rid[M_ID_WIDTH-1]) == mst_idx);
+                end
+            endcase
+
+            if (a_req && b_req) begin
+                hit_cycles++;
+                if (hit_cycles >= min_hit_cycles) begin
+                    `uvm_info(get_type_name(),
+                              $sformatf("same-master %s response contention observed: master%0d slv%0d/slv%0d for %0d cycle(s)",
+                                        chan, mst_idx, slv_a, slv_b, hit_cycles),
+                              UVM_LOW)
+                    return;
+                end
+            end
+        end
+
+        `uvm_error(get_type_name(),
+                   $sformatf("same-master %s response contention not observed: master%0d slv%0d/slv%0d within %0d cycles",
+                             chan, mst_idx, slv_a, slv_b, timeout_cycles))
     endtask
 
     local task automatic expect_same_slave_addr_contention(

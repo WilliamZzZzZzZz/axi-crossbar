@@ -15,6 +15,7 @@ class axicb_order_resp_vseq extends axicb_conc_base_vseq;
         threads_depth_test();
         outstanding_depth_test();
         ordering_protection_test();
+        response_arb_test();
 
         `uvm_info(get_type_name(), "========== order_resp_test_end ==========", UVM_LOW)
     endtask
@@ -47,6 +48,16 @@ class axicb_order_resp_vseq extends axicb_conc_base_vseq;
             begin
                 same_id_diff_slave_write();
                 same_id_diff_slave_read();
+            end
+        join
+    endtask
+
+    local task response_arb_test();
+        fork
+            wait_upstream_done(2, 2);
+            begin
+                diff_id_diff_slave_write();
+                diff_id_diff_slave_read();
             end
         join
     endtask
@@ -116,6 +127,32 @@ class axicb_order_resp_vseq extends axicb_conc_base_vseq;
             begin
                 do_nblock_read(0, s0_mid_addr, BURST_LEN_4BEATS, INCR, BURST_SIZE_4BYTES, 8'hA7);
                 do_nblock_read(0, s1_mid_addr, BURST_LEN_4BEATS, INCR, BURST_SIZE_4BYTES, 8'hA7);            
+            end
+        join
+        clear_all_slave_r_resp_delay();
+    endtask
+
+    local task diff_id_diff_slave_write();
+        set_slave_b_resp_delay(0, 105);
+        set_slave_b_resp_delay(1, 100);
+        fork
+            expect_same_master_b_resp_contention(0);
+            begin
+                do_nblock_write(0, s0_base_addr, BURST_LEN_4BEATS, INCR, BURST_SIZE_4BYTES, 8'hB3);
+                do_nblock_write(0, s1_base_addr, BURST_LEN_4BEATS, INCR, BURST_SIZE_4BYTES, 8'hB4);
+            end
+        join
+        clear_all_slave_b_resp_delay();
+    endtask
+
+    local task diff_id_diff_slave_read();
+        set_slave_r_resp_delay(0, 105);
+        set_slave_r_resp_delay(1, 100);
+        fork
+            expect_same_master_r_resp_contention(1);
+            begin
+                do_nblock_read(1, s0_base_addr, BURST_LEN_4BEATS, INCR, BURST_SIZE_4BYTES, 8'hB5);
+                do_nblock_read(1, s1_base_addr, BURST_LEN_4BEATS, INCR, BURST_SIZE_4BYTES, 8'hB6);
             end
         join
         clear_all_slave_r_resp_delay();
