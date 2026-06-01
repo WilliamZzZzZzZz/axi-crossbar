@@ -1,0 +1,18 @@
+{
+  "name": "daily_regression",
+  "tests": [
+    "smoke",
+    "decode_full_range",
+    "decerr_single",
+    "decerr_burst",
+    "decerr_id",
+    "decerr_dual_mst",
+    "burst_type",
+    "conc_arb",
+    "order_resp"
+  ],
+  "seeds": [1, 2, 3, 4, 5],
+  "cov": false,
+  "jobs": 4,
+  "timeout": 1200
+}

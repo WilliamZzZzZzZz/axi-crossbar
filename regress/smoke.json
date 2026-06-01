@@ -1,0 +1,8 @@
+{
+  "name": "smoke_regression",
+  "tests": ["smoke", "decode_full_range", "decerr_single"],
+  "seeds": [1, 2, 3],
+  "cov": false,
+  "jobs": 2,
+  "timeout": 600
+}

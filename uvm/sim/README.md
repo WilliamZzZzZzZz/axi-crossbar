@@ -46,7 +46,18 @@ make regress TESTS="smoke decerr"
 make regress_cov TESTS="smoke decerr"
 ```
 
-5. Inspect logs or coverage results.
+5. Run the Python regression wrapper from the repository root when you want
+   test x seed expansion, parallel runs, timeouts, and Markdown/CSV reports
+   while still using this Makefile as the simulation entry point.
+
+```bash
+python3 tools/regress.py --config regress/smoke.json --dry-run
+python3 tools/regress.py --config regress/smoke.json
+python3 tools/regress.py --tests smoke decerr_single --seeds 1 2 3 --jobs 2
+python3 tools/regress.py --config regress/daily.json --cov
+```
+
+6. Inspect logs or coverage results.
 
 ```bash
 make check error
@@ -72,6 +83,28 @@ Use `VAR=value` on the `make` command line to override behavior:
 - `RUN_LOG=<path>` points `check` or `checkinfo` at a different run log.
 - `TESTS="..."` controls which shortcut targets the regression loops execute.
 - `CM_DIR=<dir>` and `CM_NAME=<name>` override the coverage database location and label.
+
+## Python Regression Wrapper
+
+The repository root contains `tools/regress.py`, a standard-library Python
+wrapper around the existing `uvm/sim/Makefile`. It does not replace `make
+smoke`, `make regress`, VCS, or the UVM testbench. Each case launches a command
+such as:
+
+```bash
+make -C uvm/sim smoke SEED=1 COV=0 OUT=out/regress/smoke_seed_1
+```
+
+`OUT` is intentionally passed relative to `uvm/sim`, because `make -C uvm/sim`
+changes the Makefile working directory before evaluating `OUT`.
+
+Generated reports are written under `reports/`:
+
+- `regress_summary_<timestamp>.md` for human triage.
+- `regress_results_<timestamp>.csv` for follow-up scripts.
+
+The wrapper triages `<OUT>/log/run.log` with `tools/triage_log.py`, counting
+UVM errors, fatals, warnings, pass/fail markers, timeouts, and missing logs.
 
 ## Command Groups
 

@@ -3,6 +3,8 @@
 
 .codex
 **/generate from codex agent
+__pycache__/
+*.py[cod]
 
 # ============================================================
 # VCS / DVE / Verdi 仿真产物 (make clean 后不保留的文件)
@@ -46,3 +48,7 @@ cm.log
 
 # 独立的覆盖率数据库 (防止生成在 out/ 之外)
 uvm/sim/*.vdb
+
+# Python regression reports; keep reports/.gitkeep tracked.
+reports/regress_summary_*.md
+reports/regress_results_*.csv
