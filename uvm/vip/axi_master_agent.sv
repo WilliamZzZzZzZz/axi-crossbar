@@ -9,6 +9,7 @@ class axi_master_agent extends uvm_agent;
     axi_master_driver                       driver;
     axi_monitor#(ID_WIDTH, 0)                  monitor;
     virtual axi_if#(.ID_WIDTH(ID_WIDTH))    vif;
+    int unsigned                            master_idx;
 
     uvm_analysis_port #(axi_transaction) item_collected_port;
 
@@ -36,6 +37,7 @@ class axi_master_agent extends uvm_agent;
         super.connect_phase(phase);
         monitor.vif = vif;
         monitor.cfg = cfg;
+        monitor.port_idx = master_idx;
         driver.vif = vif;
         driver.cfg = cfg;
         sequencer.vif = vif;
@@ -49,4 +51,4 @@ class axi_master_agent extends uvm_agent;
     endtask
 endclass
 
-`endif 
+`endif

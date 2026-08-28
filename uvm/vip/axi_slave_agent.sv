@@ -38,6 +38,7 @@ class axi_slave_agent extends uvm_agent;
         responder.slave_idx = slave_idx;
         monitor.vif = vif;
         monitor.cfg = cfg;
+        monitor.port_idx = slave_idx;
 
         monitor.item_observed_port.connect(item_collected_port);
     endfunction

@@ -8,6 +8,7 @@ package axicb_pkg;
     import axi_pkg::*;
 
     `include "axicb_virtual_sequencer.sv"
+    `include "axicb_predictor.sv"
     `include "axicb_scoreboard.sv"
     `include "axicb_coverage.sv"
     `include "axi_crossbar_env.sv"
@@ -17,4 +18,4 @@ package axicb_pkg;
 
 endpackage
 
-`endif 
+`endif

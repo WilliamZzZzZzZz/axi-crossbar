@@ -6,8 +6,10 @@ class axi_monitor #(int VIF_ID_WIDTH = ID_WIDTH, bit IS_DOWNSTREAM = 0) extends 
 
     virtual axi_if#(.ID_WIDTH(VIF_ID_WIDTH))    vif;
     axi_configuration                           cfg;
+    int unsigned                                port_idx;
 
     uvm_analysis_port #(axi_transaction) item_observed_port;
+    uvm_analysis_port #(axi_channel_event) event_observed_port;
 
     //temporary store address and data before entire tr is loaded
     axi_transaction write_trans_queue[$];
@@ -16,6 +18,66 @@ class axi_monitor #(int VIF_ID_WIDTH = ID_WIDTH, bit IS_DOWNSTREAM = 0) extends 
     function new(string name = "axi_monitor", uvm_component parent);
         super.new(name, parent);
         item_observed_port = new("item_observed_port", this);
+        event_observed_port = new("event_observed_port", this);
+    endfunction
+
+    local function void publish_event(axi_channel_event_kind kind);
+        axi_channel_event ev;
+
+        ev = axi_channel_event::type_id::create("ev");
+        ev.kind          = kind;
+        ev.is_downstream = IS_DOWNSTREAM;
+        ev.port_idx      = port_idx;
+
+        case (kind)
+            AXI_EVT_AW: begin
+                ev.id     = vif.monitor_cb.awid;
+                ev.addr   = vif.monitor_cb.awaddr;
+                ev.len    = vif.monitor_cb.awlen;
+                ev.size   = vif.monitor_cb.awsize;
+                ev.burst  = vif.monitor_cb.awburst;
+                ev.lock   = vif.monitor_cb.awlock;
+                ev.cache  = vif.monitor_cb.awcache;
+                ev.prot   = vif.monitor_cb.awprot;
+                ev.qos    = vif.monitor_cb.awqos;
+                ev.region = vif.monitor_cb.awregion;
+                ev.user   = vif.monitor_cb.awuser;
+            end
+            AXI_EVT_W: begin
+                ev.data = vif.monitor_cb.wdata;
+                ev.strb = vif.monitor_cb.wstrb;
+                ev.last = vif.monitor_cb.wlast;
+                ev.user = vif.monitor_cb.wuser;
+            end
+            AXI_EVT_B: begin
+                ev.id   = vif.monitor_cb.bid;
+                ev.resp = vif.monitor_cb.bresp;
+                ev.user = vif.monitor_cb.buser;
+            end
+            AXI_EVT_AR: begin
+                ev.id     = vif.monitor_cb.arid;
+                ev.addr   = vif.monitor_cb.araddr;
+                ev.len    = vif.monitor_cb.arlen;
+                ev.size   = vif.monitor_cb.arsize;
+                ev.burst  = vif.monitor_cb.arburst;
+                ev.lock   = vif.monitor_cb.arlock;
+                ev.cache  = vif.monitor_cb.arcache;
+                ev.prot   = vif.monitor_cb.arprot;
+                ev.qos    = vif.monitor_cb.arqos;
+                ev.region = vif.monitor_cb.arregion;
+                ev.user   = vif.monitor_cb.aruser;
+            end
+            AXI_EVT_R: begin
+                ev.id   = vif.monitor_cb.rid;
+                ev.data = vif.monitor_cb.rdata;
+                ev.resp = vif.monitor_cb.rresp;
+                ev.last = vif.monitor_cb.rlast;
+                ev.user = vif.monitor_cb.ruser;
+            end
+            default: ;
+        endcase
+
+        event_observed_port.write(ev);
     endfunction
 
     virtual task run_phase(uvm_phase phase);
@@ -37,6 +99,7 @@ class axi_monitor #(int VIF_ID_WIDTH = ID_WIDTH, bit IS_DOWNSTREAM = 0) extends 
             if(vif.arst) continue;      //doubt!
             //==================== AW channel====================
             if(vif.monitor_cb.awvalid && vif.monitor_cb.awready) begin
+                publish_event(AXI_EVT_AW);
                 tr = axi_transaction::type_id::create("tr", this);
                 tr.trans_type = WRITE;
 
@@ -51,12 +114,12 @@ class axi_monitor #(int VIF_ID_WIDTH = ID_WIDTH, bit IS_DOWNSTREAM = 0) extends 
 
                 //handshake success then sample signals
                 tr.awaddr   = vif.monitor_cb.awaddr;
-                tr.awlen    = vif.monitor_cb.awlen;
-                tr.awsize   = vif.monitor_cb.awsize;
-                tr.awburst  = vif.monitor_cb.awburst;
-                tr.awlock   = vif.monitor_cb.awlock;
-                tr.awcache  = vif.monitor_cb.awcache;
-                tr.awprot   = vif.monitor_cb.awprot;
+                tr.awlen    = burst_len_enum'(vif.monitor_cb.awlen);
+                tr.awsize   = burst_size_enum'(vif.monitor_cb.awsize);
+                tr.awburst  = burst_type_enum'(vif.monitor_cb.awburst);
+                tr.awlock   = lock_type_enum'(vif.monitor_cb.awlock);
+                tr.awcache  = cache_type_enum'(vif.monitor_cb.awcache);
+                tr.awprot   = prot_type_enum'(vif.monitor_cb.awprot);
                 tr.awqos    = vif.monitor_cb.awqos;
                 tr.awregion = vif.monitor_cb.awregion;
                 tr.awuser   = vif.monitor_cb.awuser;
@@ -73,6 +136,7 @@ class axi_monitor #(int VIF_ID_WIDTH = ID_WIDTH, bit IS_DOWNSTREAM = 0) extends 
             end
             //==================== B channel ====================
             if(vif.monitor_cb.bvalid && vif.monitor_cb.bready) begin
+                publish_event(AXI_EVT_B);
                 //store current id
                 current_id = vif.monitor_cb.bid;
 
@@ -120,6 +184,7 @@ class axi_monitor #(int VIF_ID_WIDTH = ID_WIDTH, bit IS_DOWNSTREAM = 0) extends 
             //==================== W channel ====================
             if(vif.monitor_cb.wvalid && vif.monitor_cb.wready) begin
                 int w_idx[$];
+                publish_event(AXI_EVT_W);
                 w_idx = write_trans_queue.find_first_index() with (!item.wbeat_finish);
                 //focus on single transaction
                 if(w_idx.size() > 0) begin
@@ -160,6 +225,7 @@ class axi_monitor #(int VIF_ID_WIDTH = ID_WIDTH, bit IS_DOWNSTREAM = 0) extends 
             if (vif.arst) continue;
             //==================== AR channel ====================
             if(vif.monitor_cb.arvalid && vif.monitor_cb.arready) begin
+                publish_event(AXI_EVT_AR);
                 tr = axi_transaction::type_id::create("tr", this);
                 tr.trans_type = READ;
 
@@ -173,12 +239,12 @@ class axi_monitor #(int VIF_ID_WIDTH = ID_WIDTH, bit IS_DOWNSTREAM = 0) extends 
                 end
 
                 tr.araddr   = vif.monitor_cb.araddr;
-                tr.arlen    = vif.monitor_cb.arlen;
-                tr.arsize   = vif.monitor_cb.arsize;
-                tr.arburst  = vif.monitor_cb.arburst;
-                tr.arlock   = vif.monitor_cb.arlock;
-                tr.arcache  = vif.monitor_cb.arcache;
-                tr.arprot   = vif.monitor_cb.arprot;
+                tr.arlen    = burst_len_enum'(vif.monitor_cb.arlen);
+                tr.arsize   = burst_size_enum'(vif.monitor_cb.arsize);
+                tr.arburst  = burst_type_enum'(vif.monitor_cb.arburst);
+                tr.arlock   = lock_type_enum'(vif.monitor_cb.arlock);
+                tr.arcache  = cache_type_enum'(vif.monitor_cb.arcache);
+                tr.arprot   = prot_type_enum'(vif.monitor_cb.arprot);
                 tr.arqos    = vif.monitor_cb.arqos;
                 tr.arregion = vif.monitor_cb.arregion;
                 tr.aruser   = vif.monitor_cb.aruser;
@@ -191,6 +257,7 @@ class axi_monitor #(int VIF_ID_WIDTH = ID_WIDTH, bit IS_DOWNSTREAM = 0) extends 
             end
             //==================== R channel ====================
             if(vif.monitor_cb.rvalid && vif.monitor_cb.rready) begin
+                publish_event(AXI_EVT_R);
                 if(read_trans_queue.size() > 0) begin
                     current_id = vif.monitor_cb.rid;
                     //sreach correct via ID and flag
@@ -258,10 +325,11 @@ class axi_monitor #(int VIF_ID_WIDTH = ID_WIDTH, bit IS_DOWNSTREAM = 0) extends 
     virtual task monitor_reset();
         forever begin
             @(posedge vif.arst)     //monitor reset signals
+            publish_event(AXI_EVT_RESET);
             foreach (write_trans_queue[i]) begin
                 axi_transaction partial = write_trans_queue[i];
                 if (partial.current_wbeat_count > 0) begin
-                    partial.awlen = partial.current_wbeat_count - 1;
+                    partial.awlen = burst_len_enum'(partial.current_wbeat_count - 1);
                     partial.wdata = new[partial.current_wbeat_count](partial.wdata);
                     partial.wstrb = new[partial.current_wbeat_count](partial.wstrb);
                     item_observed_port.write(partial);
@@ -274,4 +342,4 @@ class axi_monitor #(int VIF_ID_WIDTH = ID_WIDTH, bit IS_DOWNSTREAM = 0) extends 
 
 endclass
 
-`endif 
+`endif

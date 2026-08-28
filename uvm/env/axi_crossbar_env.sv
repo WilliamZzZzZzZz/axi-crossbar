@@ -10,6 +10,7 @@ class axi_crossbar_env extends uvm_env;
     axi_slave_agent             slv_agent00;
     axi_slave_agent             slv_agent01;
     axicb_virtual_sequencer     virt_sqr;
+    axicb_predictor             pred;
     axicb_scoreboard            scb;
     axicb_coverage              cov;
 
@@ -30,10 +31,13 @@ class axi_crossbar_env extends uvm_env;
         mst_agent01 = axi_master_agent::type_id::create("mst_agent01", this);
         slv_agent00 = axi_slave_agent::type_id::create("slv_agent00", this);
         slv_agent01 = axi_slave_agent::type_id::create("slv_agent01", this);
+        mst_agent00.master_idx = 0;
+        mst_agent01.master_idx = 1;
         slv_agent00.slave_idx = 0;
         slv_agent01.slave_idx = 1;
         
         virt_sqr = axicb_virtual_sequencer::type_id::create("virt_sqr", this);
+        pred = axicb_predictor::type_id::create("pred", this);
         scb = axicb_scoreboard::type_id::create("scb", this);
         cov = axicb_coverage::type_id::create("cov", this);
     endfunction
@@ -48,11 +52,17 @@ class axi_crossbar_env extends uvm_env;
         //virtual interface connection
         virt_sqr.vif_slv00 = slv_agent00.vif;
         virt_sqr.vif_slv01 = slv_agent01.vif;
-        //scoreboard connection
-        mst_agent00.item_collected_port.connect(scb.mst00_export);
-        mst_agent01.item_collected_port.connect(scb.mst01_export);
-        slv_agent00.item_collected_port.connect(scb.slv00_export);
-        slv_agent01.item_collected_port.connect(scb.slv01_export);
+        //channel predictor and scoreboard connections
+        pred.cfg = cfg;
+        mst_agent00.monitor.event_observed_port.connect(pred.mst00_export);
+        mst_agent01.monitor.event_observed_port.connect(pred.mst01_export);
+        slv_agent00.monitor.event_observed_port.connect(pred.slv00_export);
+        slv_agent01.monitor.event_observed_port.connect(pred.slv01_export);
+        pred.expected_port.connect(scb.expected_export);
+        mst_agent00.monitor.event_observed_port.connect(scb.mst00_export);
+        mst_agent01.monitor.event_observed_port.connect(scb.mst01_export);
+        slv_agent00.monitor.event_observed_port.connect(scb.slv00_export);
+        slv_agent01.monitor.event_observed_port.connect(scb.slv01_export);
         //coverage connection
         mst_agent00.item_collected_port.connect(cov.mst00_export);
         mst_agent01.item_collected_port.connect(cov.mst01_export);
@@ -60,4 +70,4 @@ class axi_crossbar_env extends uvm_env;
 
 endclass
 
-`endif 
+`endif

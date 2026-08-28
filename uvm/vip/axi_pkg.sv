@@ -7,6 +7,7 @@ package axi_pkg;
     `include "axi_types.sv"
     `include "axi_configuration.sv"
     `include "axi_transaction.sv"
+    `include "axi_channel_event.sv"
     `include "axi_sequence_lib.svh"
     `include "axi_slave_mem.sv"
     `include "axi_slave_write_responder.sv"
@@ -23,4 +24,4 @@ package axi_pkg;
 endpackage
 
 
-`endif 
+`endif
