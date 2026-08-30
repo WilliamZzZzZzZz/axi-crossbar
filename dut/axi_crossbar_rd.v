@@ -91,7 +91,9 @@ module axi_crossbar_rd #
     parameter M_AR_REG_TYPE = {M_COUNT{2'd1}},
     // Master interface R channel register type (input)
     // 0 to bypass, 1 for simple buffer, 2 for skid buffer
-    parameter M_R_REG_TYPE = {M_COUNT{2'd0}}
+    parameter M_R_REG_TYPE = {M_COUNT{2'd0}},
+    // Enable QoS-aware AR arbitration
+    parameter QOS_ARB_ENABLE = 0
 )
 (
     input  wire                             clk,
@@ -471,23 +473,41 @@ generate
         wire [S_COUNT-1:0] a_grant;
         wire a_grant_valid;
         wire [CL_S_COUNT-1:0] a_grant_encoded;
+        wire [S_COUNT*4-1:0] a_request_qos;
 
-        arbiter #(
-            .PORTS(S_COUNT),
-            .ARB_TYPE_ROUND_ROBIN(1),
-            .ARB_BLOCK(1),
-            .ARB_BLOCK_ACK(1),
-            .ARB_LSB_HIGH_PRIORITY(1)
-        )
-        a_arb_inst (
-            .clk(clk),
-            .rst(rst),
-            .request(a_request),
-            .acknowledge(a_acknowledge),
-            .grant(a_grant),
-            .grant_valid(a_grant_valid),
-            .grant_encoded(a_grant_encoded)
-        );
+        if (QOS_ARB_ENABLE) begin : g_ar_qos_arb
+            qos_arbiter #(
+                .PORTS(S_COUNT),
+                .QOS_WIDTH(4)
+            )
+            a_arb_inst (
+                .clk(clk),
+                .rst(rst),
+                .request(a_request),
+                .request_qos(a_request_qos),
+                .acknowledge(a_acknowledge),
+                .grant(a_grant),
+                .grant_valid(a_grant_valid),
+                .grant_encoded(a_grant_encoded)
+            );
+        end else begin : g_ar_rr_arb
+            arbiter #(
+                .PORTS(S_COUNT),
+                .ARB_TYPE_ROUND_ROBIN(1),
+                .ARB_BLOCK(1),
+                .ARB_BLOCK_ACK(1),
+                .ARB_LSB_HIGH_PRIORITY(1)
+            )
+            a_arb_inst (
+                .clk(clk),
+                .rst(rst),
+                .request(a_request),
+                .acknowledge(a_acknowledge),
+                .grant(a_grant),
+                .grant_valid(a_grant_valid),
+                .grant_encoded(a_grant_encoded)
+            );
+        end
 
         // address mux
         wire [M_ID_WIDTH-1:0]   s_axi_arid_mux     = int_s_axi_arid[a_grant_encoded*S_ID_WIDTH +: S_ID_WIDTH] | (a_grant_encoded << S_ID_WIDTH);
@@ -509,6 +529,7 @@ generate
         for (m = 0; m < S_COUNT; m = m + 1) begin
             assign a_request[m] = int_axi_arvalid[m*M_COUNT+n] && !a_grant[m] && !trans_limit;
             assign a_acknowledge[m] = a_grant[m] && int_axi_arvalid[m*M_COUNT+n] && s_axi_arready_mux;
+            assign a_request_qos[m*4 +: 4] = int_s_axi_arqos[m*4 +: 4];
         end
 
         assign trans_start = s_axi_arvalid_mux && s_axi_arready_mux && a_grant_valid;

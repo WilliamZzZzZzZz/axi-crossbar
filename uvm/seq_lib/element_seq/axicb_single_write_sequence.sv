@@ -10,6 +10,7 @@ class axicb_single_write_sequence extends axicb_base_sequence;
     rand burst_len_enum burst_len;
     rand burst_type_enum burst_type;
     rand burst_size_enum burst_size;
+    bit [QOS_WIDTH - 1:0] qos = '0;
 
     bit [31:0] every_beat_data[];   //store every beat's data    
     bit [3:0] every_beat_wstrb[];
@@ -40,6 +41,7 @@ class axicb_single_write_sequence extends axicb_base_sequence;
         axi_single.every_beat_data   = every_beat_data;       
         axi_single.every_beat_wstrb  = every_beat_wstrb;
         axi_single.tr_id             = awid;
+        axi_single.tr_qos            = qos;
         axi_single.wait_for_response = wait_for_response;
         axi_single.expect_decerr     = expect_decerr;
         
@@ -53,4 +55,4 @@ class axicb_single_write_sequence extends axicb_base_sequence;
     endtask
 endclass
 
-`endif 
+`endif

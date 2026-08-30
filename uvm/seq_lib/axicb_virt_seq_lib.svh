@@ -16,6 +16,7 @@
 `include "axicb_burst_type_vseq.sv"
 `include "axicb_conc_arb_vseq.sv"
 `include "axicb_order_resp_vseq.sv"
+`include "axicb_qos_arb_vseq.sv"
 
 
-`endif 
+`endif

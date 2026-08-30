@@ -1,4 +1,6 @@
-module axi_crossbar_tb;
+module axi_crossbar_tb #(
+    parameter bit QOS_ARB_ENABLE = 0
+);
 
     import uvm_pkg::*;
     `include "uvm_macros.svh"
@@ -118,6 +120,7 @@ module axi_crossbar_tb;
         .STRB_WIDTH        (AXI_STRB_WIDTH),
         .S_ID_WIDTH        (AXI_S_ID_WIDTH),
         .M_ID_WIDTH        (AXI_M_ID_WIDTH),
+        .QOS_ARB_ENABLE    (QOS_ARB_ENABLE),
 
         .AWUSER_ENABLE     (0),
         .AWUSER_WIDTH      (AXI_AWUSER_WIDTH),

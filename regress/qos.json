@@ -1,0 +1,8 @@
+{
+  "name": "qos_regression",
+  "tests": ["qos_arb"],
+  "seeds": [1, 2, 3, 4, 5],
+  "cov": false,
+  "jobs": 1,
+  "timeout": 1200
+}

@@ -10,6 +10,7 @@ class axicb_single_read_sequence extends axicb_base_sequence;
     rand burst_len_enum burst_len;
     rand burst_type_enum burst_type;
     rand burst_size_enum burst_size;
+    bit [QOS_WIDTH - 1:0] qos = '0;
 
     bit [31:0] every_beat_data[];   //store every beat's data
     bit [1:0]  every_beat_rresp[];
@@ -39,6 +40,7 @@ class axicb_single_read_sequence extends axicb_base_sequence;
         axi_single.burst_size        = burst_size;
         axi_single.wait_for_response = wait_for_response;
         axi_single.tr_id             = arid;
+        axi_single.tr_qos            = qos;
         axi_single.expect_decerr     = expect_decerr;
 
         target_sqr = p_sequencer.get_master_sqr(src_master_idx);     //'0' means send tr to slave00 port
@@ -57,4 +59,4 @@ class axicb_single_read_sequence extends axicb_base_sequence;
     endtask
 endclass
 
-`endif 
+`endif

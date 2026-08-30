@@ -124,7 +124,9 @@ module axi_crossbar #
     parameter M_AR_REG_TYPE = {M_COUNT{2'd1}},
     // Master interface R channel register type (input)
     // 0 to bypass, 1 for simple buffer, 2 for skid buffer
-    parameter M_R_REG_TYPE = {M_COUNT{2'd0}}
+    parameter M_R_REG_TYPE = {M_COUNT{2'd0}},
+    // Enable QoS-aware AW/AR arbitration
+    parameter QOS_ARB_ENABLE = 0
 )
 (
     input  wire                             clk,
@@ -233,6 +235,7 @@ axi_crossbar_wr #(
     .STRB_WIDTH(STRB_WIDTH),
     .S_ID_WIDTH(S_ID_WIDTH),
     .M_ID_WIDTH(M_ID_WIDTH),
+    .QOS_ARB_ENABLE(QOS_ARB_ENABLE),
     .AWUSER_ENABLE(AWUSER_ENABLE),
     .AWUSER_WIDTH(AWUSER_WIDTH),
     .WUSER_ENABLE(WUSER_ENABLE),
@@ -319,6 +322,7 @@ axi_crossbar_rd #(
     .STRB_WIDTH(STRB_WIDTH),
     .S_ID_WIDTH(S_ID_WIDTH),
     .M_ID_WIDTH(M_ID_WIDTH),
+    .QOS_ARB_ENABLE(QOS_ARB_ENABLE),
     .ARUSER_ENABLE(ARUSER_ENABLE),
     .ARUSER_WIDTH(ARUSER_WIDTH),
     .RUSER_ENABLE(RUSER_ENABLE),

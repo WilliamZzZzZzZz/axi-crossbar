@@ -11,6 +11,7 @@
 `include "axicb_burst_type_test.sv"
 `include "axicb_conc_arb_test.sv"
 `include "axicb_order_resp_test.sv"
+`include "axicb_qos_arb_test.sv"
 
 
-`endif 
+`endif

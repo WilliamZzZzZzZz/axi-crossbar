@@ -17,6 +17,7 @@ class axicb_coverage extends uvm_component;
     burst_type_enum burst_type;
     bit [ADDR_WIDTH - 1:0] addr;
     bit [STRB_WIDTH - 1:0] wstrb;
+    bit [QOS_WIDTH - 1:0] qos;
     int unsigned wrap_start_offset;
 
     int src_master;     // 0: mst00, 1: mst01
@@ -35,6 +36,7 @@ class axicb_coverage extends uvm_component;
         cg_routing       = new();
         cg_response      = new();
         cg_decode        = new();
+        cg_qos           = new();
     endfunction
 
     function void write_mst00(axi_transaction t);
@@ -60,6 +62,7 @@ class axicb_coverage extends uvm_component;
             burst_size  = t.awsize;
             burst_type  = t.awburst;
             wstrb       = (t.wstrb.size() > 0) ? t.wstrb[0][3:0] : 4'hF;
+            qos         = t.awqos;
             resp        = t.bresp;
         end else begin  //READ
             addr        = t.araddr;
@@ -67,6 +70,7 @@ class axicb_coverage extends uvm_component;
             burst_size  = t.arsize;
             burst_type  = t.arburst;
             wstrb       = 4'h0;
+            qos         = t.arqos;
             resp        = (t.rresp.size() > 0) ? t.rresp[0] : 2'b00;
         end
 
@@ -95,6 +99,7 @@ class axicb_coverage extends uvm_component;
         cg_routing.sample();
         cg_response.sample();
         cg_decode.sample();
+        cg_qos.sample();
     endfunction
 
     function void report_phase(uvm_phase phase);
@@ -240,6 +245,33 @@ class axicb_coverage extends uvm_component;
             bins read  = {READ};
         }
         CX_DECODE: cross DECODE_ADDR, DECODE_MST, DECODE_TYPE;
+    endgroup
+
+    covergroup cg_qos;
+        option.per_instance = 1;
+        option.name = "qos coverage";
+
+        CP_QOS: coverpoint qos {
+            bins zero = {4'h0};
+            bins low  = {[4'h1:4'h4]};
+            bins mid  = {[4'h5:4'hA]};
+            bins high = {[4'hB:4'hE]};
+            bins max  = {4'hF};
+        }
+        CP_TYPE: coverpoint trans_type {
+            bins write = {WRITE};
+            bins read  = {READ};
+        }
+        CP_SRC: coverpoint src_master {
+            bins master0 = {0};
+            bins master1 = {1};
+        }
+        CP_DST: coverpoint dst_slave {
+            bins slave0 = {0};
+            bins slave1 = {1};
+            bins decerr = {-1};
+        }
+        CX_QOS: cross CP_QOS, CP_TYPE, CP_SRC, CP_DST;
     endgroup
 endclass
 

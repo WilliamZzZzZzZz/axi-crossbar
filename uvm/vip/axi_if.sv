@@ -217,7 +217,8 @@ interface axi_if #(
         @(posedge aclk) disable iff (arst)
         (awvalid && !awready) |=> $stable(awid) && $stable(awaddr) && 
                                    $stable(awlen) && $stable(awsize) && 
-                                   $stable(awburst) && $stable(awvalid);
+                                   $stable(awburst) && $stable(awqos) &&
+                                   $stable(awvalid);
     endproperty
     assert property (p_awvalid_stable) else 
         $error("AXI Protocol Violation: Write address channel signals must remain stable when awvalid is high and awready is low");
@@ -236,7 +237,8 @@ interface axi_if #(
         @(posedge aclk) disable iff (arst)
         (arvalid && !arready) |=> $stable(arid) && $stable(araddr) && 
                                    $stable(arlen) && $stable(arsize) && 
-                                   $stable(arburst) && $stable(arvalid);
+                                   $stable(arburst) && $stable(arqos) &&
+                                   $stable(arvalid);
     endproperty
     assert property (p_arvalid_stable) else 
         $error("AXI Protocol Violation: Read address channel signals must remain stable when arvalid is high and arready is low");
@@ -344,4 +346,4 @@ interface axi_if #(
 
 endinterface : axi_if
 
-`endif 
+`endif

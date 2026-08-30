@@ -5,7 +5,7 @@ SNPSLMD_LICENSE_FILE ?= $(LM_LICENSE_FILE)
 export LM_LICENSE_FILE
 export SNPSLMD_LICENSE_FILE
 .DEFAULT_GOAL := help
-.PHONY: help prepare comp elab run smoke decerr regress regress_cov all_cov mergecov dvecov verdicov htmlcov check checkinfo show killdve clean
+.PHONY: help prepare comp elab run smoke qos_arb decerr regress regress_cov all_cov mergecov dvecov verdicov htmlcov check checkinfo show killdve clean
 # --- Agent 仿真双重保险配置结束 ---
 
 help: ## Show grouped help for simulation targets
@@ -29,6 +29,7 @@ help: ## Show grouped help for simulation targets
 		print "  SEED=<n>       Override +ntb_random_seed"; \
 		print "  GUI=1          Launch DVE GUI"; \
 		print "  COV=1          Enable coverage during elab/run"; \
+		print "  QOS_ARB_ENABLE=0|1  Disable or enable AW/AR QoS arbitration"; \
 		print "  DOTCL=0        Skip -ucli -do axicb_sim_run.do"; \
 		print "  VERB=<level>   Override +UVM_VERBOSITY"; \
 		print "  OUT=<dir>      Redirect generated artifacts"; \
@@ -55,6 +56,7 @@ TB        = axi_crossbar_tb
 SEED      = 1
 GUI      ?= 0
 COV      ?= 0
+QOS_ARB_ENABLE ?= 0
 DOTCL    ?= 1
 VERB     ?= UVM_HIGH
 OUT      ?= out
@@ -121,11 +123,11 @@ VCOMP_INC = +incdir+../../dut \
             +incdir+../test \
             +incdir+../testbench
 VCOMP    = vlogan -full64 -ntb_opts uvm-1.2 -sverilog -timescale=1ps/1ps -nc -l $(OUT)/log/comp.log $(VCOMP_INC)
-ELAB     = vcs -full64 -ntb_opts uvm-1.2 -debug_acc+all -l $(OUT)/log/elab.log -sim_res=1ps -LDFLAGS -Wl,--no-as-needed
+ELAB     = vcs -full64 -ntb_opts uvm-1.2 -debug_acc+all -l $(OUT)/log/elab.log -sim_res=1ps -LDFLAGS -Wl,--no-as-needed -pvalue+$(TB).QOS_ARB_ENABLE=$(QOS_ARB_ENABLE)
 RUN      = $(OUT)/obj/$(TB).simv -l $(RUN_LOG) -sml +ntb_random_seed=$(SEED) +UVM_TESTNAME=$(TESTNAME) +UVM_VERBOSITY=$(VERB) -cm_dir $(CM_DIR) -cm_name $(CM_NAME)
 COV_OPTS = -full64 -dir $(CM_DIR)
 CM_DIR  ?= $(OUT)/cov.vdb
-CM_NAME ?= $(TESTNAME)_$(SEED)
+CM_NAME ?= $(TESTNAME)_$(SEED)_qos$(QOS_ARB_ENABLE)
 SIMRUNFILE = axicb_sim_run.do
 
 ifeq ($(GUI),1)
@@ -186,6 +188,10 @@ conc_arb: run ## Run the CONC-arb test
 
 order_resp: TESTNAME = axicb_order_resp_test
 order_resp: run ## Run the CONC-orer-resp test
+
+qos_arb: TESTNAME = axicb_qos_arb_test
+qos_arb: QOS_ARB_ENABLE = 1
+qos_arb: run ## Run AW/AR QoS priority and equal-QoS Round-Robin tests
 
 ##@ Regression
 TESTS ?= smoke
